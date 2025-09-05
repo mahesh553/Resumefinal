@@ -1,0 +1,39 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/src"],
+  "testMatch": [
+    "**/__tests__/**/*.ts",
+    "**/?(*.)+(spec|test).ts"
+  ],
+  "testPathIgnorePatterns": [
+    "<rootDir>/src/backend/__tests__/setup.ts",
+    "<rootDir>/src/backend/__tests__/jest-setup.ts"
+  ],
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!src/**/*.interface.ts",
+    "!src/**/*.types.ts",
+    "!src/frontend/**/*",
+    "!src/backend/main.ts",
+    "!src/backend/database/data-source.ts"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": [
+    "text",
+    "lcov",
+    "html"
+  ],
+  "setupFilesAfterEnv": ["<rootDir>/src/backend/__tests__/setup.ts"],
+  "setupFiles": ["<rootDir>/src/backend/__tests__/jest-setup.ts"],
+  "testTimeout": 30000,
+  "verbose": true,
+  "forceExit": true,
+  "clearMocks": true,
+  "resetMocks": true,
+  "restoreMocks": true
+}

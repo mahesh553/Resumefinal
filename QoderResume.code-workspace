@@ -1,0 +1,188 @@
+{
+  "folders": [
+    {
+      "name": "QoderResume",
+      "path": "."
+    },
+    {
+      "name": "Frontend",
+      "path": "./src/frontend"
+    },
+    {
+      "name": "Backend", 
+      "path": "./src/backend"
+    },
+    {
+      "name": "Shared",
+      "path": "./src/shared"
+    },
+    {
+      "name": "Infrastructure",
+      "path": "./infrastructure"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "typescript.suggest.autoImports": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true,
+      "source.organizeImports": true
+    },
+    "tailwindCSS.includeLanguages": {
+      "typescript": "javascript",
+      "typescriptreact": "javascript"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cn\\(([^)]*)\\)", "'([^']*)'"],
+      ["clsx\\(([^)]*)\\)", "'([^']*)'"]
+    ],
+    "emmet.includeLanguages": {
+      "typescript": "html",
+      "typescriptreact": "html"
+    },
+    "files.associations": {
+      "*.css": "tailwindcss"
+    },
+    "css.validate": false,
+    "less.validate": false,
+    "scss.validate": false,
+    "typescript.validate.enable": true,
+    "typescript.surveys.enabled": false,
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+      "*.ts": "${capture}.js",
+      "*.tsx": "${capture}.ts",
+      "package.json": "package-lock.json,npm-shrinkwrap.json,yarn.lock",
+      "tailwind.config.js": "tailwind.config.ts,postcss.config.js",
+      "next.config.js": "next.config.ts,next-env.d.ts"
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.next": true,
+      "**/coverage": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/.next/**": true,
+      "**/dist/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss", 
+      "ms-vscode.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "formulahendry.auto-rename-tag",
+      "ms-vscode.vscode-docker",
+      "ckolkman.vscode-postgres",
+      "christian-kohler.path-intellisense",
+      "formulahendry.auto-close-tag",
+      "ms-vscode.vscode-todo-highlight",
+      "gruntfuggly.todo-tree",
+      "mhutchie.git-graph",
+      "eamodio.gitlens",
+      "humao.rest-client",
+      "ms-vscode.vscode-thunder-client"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start Development",
+        "type": "shell",
+        "command": "npm run dev",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Build Project",
+        "type": "shell", 
+        "command": "npm run build",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Start Infrastructure",
+        "type": "shell",
+        "command": "docker-compose up -d",
+        "options": {
+          "cwd": "./infrastructure/docker"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Stop Infrastructure", 
+        "type": "shell",
+        "command": "docker-compose down",
+        "options": {
+          "cwd": "./infrastructure/docker"
+        },
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug Frontend",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/node_modules/.bin/next",
+        "args": ["dev", "-p", "3000"],
+        "cwd": "${workspaceFolder}",
+        "runtimeArgs": ["--inspect"],
+        "env": {
+          "NODE_ENV": "development"
+        }
+      },
+      {
+        "name": "Debug Backend",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/node_modules/.bin/nest",
+        "args": ["start", "--watch", "--debug"],
+        "cwd": "${workspaceFolder}",
+        "runtimeArgs": ["--inspect"],
+        "env": {
+          "NODE_ENV": "development"
+        }
+      }
+    ]
+  }
+}
