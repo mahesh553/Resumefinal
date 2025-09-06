@@ -71,21 +71,27 @@ export interface Job {
   company: string;
   vendorName: string; // Added for compatibility
   description: string;
+  jobDescription?: string; // Backend field name
   requirements: string[];
   location: string;
-  salaryRange?: string; // Added
+  salaryRange?: string;
+  applicationUrl?: string; // Backend field
   type: "full-time" | "part-time" | "contract" | "internship";
   status:
     | "applied"
+    | "under_review"
     | "interview_scheduled"
+    | "interview_completed"
     | "offer_received"
     | "rejected"
     | "withdrawn";
   applicationDate: string;
   appliedDate: string; // Added for compatibility
-  followUpDate?: string; // Added
-  interviewDate?: string; // Added
+  followUpDate?: string;
+  interviewDate?: string;
   notes?: string;
+  contactEmail?: string; // Backend field
+  contactPhone?: string; // Backend field
   createdAt: string;
   updatedAt: string;
 }
@@ -161,4 +167,5 @@ export interface UploadProgress {
   progress: number;
   status: "pending" | "uploading" | "processing" | "completed" | "error";
   error?: string;
+  resumeId?: string;
 }

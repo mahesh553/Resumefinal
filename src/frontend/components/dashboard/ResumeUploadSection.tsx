@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { apiClient } from "@/lib/api";
 import { formatBytes } from "@/lib/utils";
 import type { UploadProgress } from "@/types";
 import {
@@ -8,26 +9,58 @@ import {
   CloudArrowUpIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
+  EyeIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { toast } from "react-hot-toast";
+import { FilePreviewModal } from "./FilePreviewModal";
 
 export function ResumeUploadSection() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<File[]>([]);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newUploads = acceptedFiles.map((file) => ({
-      file,
-      progress: 0,
-      status: "pending" as const,
-    }));
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const validFiles = acceptedFiles.filter((file) => {
+        // Additional validation
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is too large. Maximum size is 10MB.`);
+          return false;
+        }
 
-    setUploadProgress((prev) => [...prev, ...newUploads]);
-    handleUpload(newUploads);
-  }, []);
+        // Check for duplicate files
+        const isDuplicate = uploadProgress.some(
+          (upload) =>
+            upload.file.name === file.name && upload.file.size === file.size
+        );
+
+        if (isDuplicate) {
+          toast.error(`${file.name} is already in the upload queue.`);
+          return false;
+        }
+
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      const newUploads = validFiles.map((file) => ({
+        file,
+        progress: 0,
+        status: "pending" as const,
+      }));
+
+      setUploadProgress((prev) => [...prev, ...newUploads]);
+      handleUpload(newUploads);
+    },
+    [uploadProgress]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -56,14 +89,17 @@ export function ResumeUploadSection() {
           )
         );
 
-        // Simulate upload progress
-        for (let progress = 0; progress <= 100; progress += 10) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+        // Use real API upload with progress tracking
+        const result = await apiClient.uploadResume(upload.file, (progress) => {
           setUploadProgress((prev) =>
             prev.map((item) =>
               item.file === upload.file ? { ...item, progress } : item
             )
           );
+        });
+
+        if (result.error) {
+          throw new Error(result.error);
         }
 
         // Update to processing
@@ -75,20 +111,30 @@ export function ResumeUploadSection() {
           )
         );
 
-        // Simulate processing time
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Show success message
+        toast.success(`${upload.file.name} uploaded successfully!`);
 
         // Complete
         setUploadProgress((prev) =>
           prev.map((item) =>
-            item.file === upload.file ? { ...item, status: "completed" } : item
+            item.file === upload.file
+              ? {
+                  ...item,
+                  status: "completed",
+                  resumeId: result.data?.id,
+                }
+              : item
           )
         );
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
+        toast.error(`Failed to upload ${upload.file.name}: ${errorMessage}`);
+
         setUploadProgress((prev) =>
           prev.map((item) =>
             item.file === upload.file
-              ? { ...item, status: "error", error: "Upload failed" }
+              ? { ...item, status: "error", error: errorMessage }
               : item
           )
         );
@@ -102,6 +148,87 @@ export function ResumeUploadSection() {
     setUploadProgress((prev) =>
       prev.filter((item) => item.file !== fileToRemove)
     );
+  };
+
+  const bulkUploadFiles = async () => {
+    if (uploadQueue.length === 0) {
+      toast.error("No files in queue to upload.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const result = await apiClient.bulkUploadResumes(uploadQueue);
+
+      if (result.error) {
+        toast.error(`Bulk upload failed: ${result.error}`);
+        return;
+      }
+
+      toast.success(
+        `Bulk upload started! Processing ${result.data?.totalFiles} files.`
+      );
+      setUploadQueue([]);
+
+      // Add files to progress tracking
+      const newUploads = uploadQueue.map((file) => ({
+        file,
+        progress: 0,
+        status: "processing" as const,
+      }));
+
+      setUploadProgress((prev) => [...prev, ...newUploads]);
+    } catch (error) {
+      toast.error("Bulk upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const _addToQueue = (files: File[]) => {
+    setUploadQueue((prev) => {
+      const newFiles = files.filter(
+        (file) =>
+          !prev.some(
+            (queueFile) =>
+              queueFile.name === file.name && queueFile.size === file.size
+          )
+      );
+      return [...prev, ...newFiles];
+    });
+  };
+
+  const removeFromQueue = (fileToRemove: File) => {
+    setUploadQueue((prev) => prev.filter((file) => file !== fileToRemove));
+  };
+
+  const handlePreviewFile = (file: File) => {
+    setPreviewFile(file);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewFile(null);
+  };
+
+  const retryUpload = async (fileToRetry: File) => {
+    const uploadToRetry = uploadProgress.find(
+      (item) => item.file === fileToRetry
+    );
+    if (uploadToRetry) {
+      // Reset the upload status
+      setUploadProgress((prev) =>
+        prev.map((item) =>
+          item.file === fileToRetry
+            ? { ...item, status: "pending", progress: 0, error: undefined }
+            : item
+        )
+      );
+
+      // Retry the upload
+      await handleUpload([uploadToRetry]);
+    }
   };
 
   const getStatusIcon = (status: UploadProgress["status"]) => {
@@ -194,6 +321,54 @@ export function ResumeUploadSection() {
         </motion.div>
       </div>
 
+      {/* Upload Queue */}
+      {uploadQueue.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="mt-6 space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">
+              Upload Queue ({uploadQueue.length} files)
+            </h3>
+            <Button onClick={bulkUploadFiles} disabled={isUploading} size="sm">
+              Upload All
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {uploadQueue.map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+              >
+                <div className="flex items-center gap-2">
+                  <DocumentTextIcon className="w-4 h-4 text-blue-600" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatBytes(file.size)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeFromQueue(file)}
+                  className="text-gray-400 hover:text-red-600"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Upload Progress */}
       <AnimatePresence>
         {uploadProgress.length > 0 && (
@@ -226,18 +401,47 @@ export function ResumeUploadSection() {
                         <p className="text-sm text-gray-500">
                           {formatBytes(upload.file.size)} •{" "}
                           {getStatusText(upload.status)}
+                          {upload.status === "completed" && upload.resumeId && (
+                            <span className="ml-2 text-green-600">
+                              ✓ Ready for analysis
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeUpload(upload.file)}
-                      className="text-gray-400 hover:text-error-600"
-                    >
-                      <XMarkIcon className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {(upload.status === "completed" ||
+                        upload.status === "error") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePreviewFile(upload.file)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <EyeIcon className="w-4 h-4 mr-1" />
+                          Preview
+                        </Button>
+                      )}
+                      {upload.status === "error" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => retryUpload(upload.file)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          Retry
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeUpload(upload.file)}
+                        className="text-gray-400 hover:text-error-600"
+                      >
+                        <XMarkIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
@@ -282,12 +486,68 @@ export function ResumeUploadSection() {
 
         <Button
           variant="outline"
-          onClick={() => setUploadProgress([])}
-          disabled={isUploading || uploadProgress.length === 0}
+          onClick={() => {
+            setUploadProgress([]);
+            setUploadQueue([]);
+          }}
+          disabled={
+            isUploading ||
+            (uploadProgress.length === 0 && uploadQueue.length === 0)
+          }
         >
           Clear All
         </Button>
+
+        {uploadProgress.filter((item) => item.status === "completed").length >
+          0 && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const completedUploads = uploadProgress.filter(
+                (item) => item.status === "completed"
+              );
+              toast.success(
+                `${completedUploads.length} resumes ready for analysis!`
+              );
+            }}
+          >
+            View Results (
+            {
+              uploadProgress.filter((item) => item.status === "completed")
+                .length
+            }
+            )
+          </Button>
+        )}
+
+        {uploadProgress.filter((item) => item.status === "error").length >
+          0 && (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const failedUploads = uploadProgress.filter(
+                (item) => item.status === "error"
+              );
+              for (const upload of failedUploads) {
+                await retryUpload(upload.file);
+              }
+            }}
+            disabled={isUploading}
+          >
+            Retry Failed (
+            {uploadProgress.filter((item) => item.status === "error").length})
+          </Button>
+        )}
       </div>
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          isOpen={isPreviewOpen}
+          onClose={closePreview}
+        />
+      )}
     </div>
   );
 }

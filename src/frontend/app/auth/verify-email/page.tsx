@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   FiArrowRight,
@@ -24,6 +24,44 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      try {
+        const response = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setVerificationState("success");
+          toast.success("Email verified successfully!");
+
+          // Redirect to login after a short delay
+          setTimeout(() => {
+            router.push("/auth/login?verified=true");
+          }, 2000);
+        } else {
+          if (data.message?.includes("expired")) {
+            setVerificationState("expired");
+          } else {
+            setVerificationState("error");
+          }
+          toast.error(data.message || "Verification failed");
+        }
+      } catch (error) {
+        console.error("Email verification error:", error);
+        setVerificationState("error");
+        toast.error("An error occurred during verification");
+      }
+    },
+    [router]
+  );
+
   useEffect(() => {
     const token = searchParams.get("token");
     const userEmail = searchParams.get("email");
@@ -37,42 +75,7 @@ export default function VerifyEmailPage() {
     } else {
       setVerificationState("error");
     }
-  }, [searchParams]);
-
-  const verifyEmail = async (token: string) => {
-    try {
-      const response = await fetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setVerificationState("success");
-        toast.success("Email verified successfully!");
-
-        // Redirect to login after a short delay
-        setTimeout(() => {
-          router.push("/auth/login?verified=true");
-        }, 2000);
-      } else {
-        if (data.message?.includes("expired")) {
-          setVerificationState("expired");
-        } else {
-          setVerificationState("error");
-        }
-        toast.error(data.message || "Verification failed");
-      }
-    } catch (error) {
-      console.error("Email verification error:", error);
-      setVerificationState("error");
-      toast.error("An error occurred during verification");
-    }
-  };
+  }, [searchParams, verifyEmail]);
 
   const resendVerificationEmail = async () => {
     if (!email) {

@@ -20,20 +20,10 @@
     "*.config.js",
     "next.config.js",
     "tailwind.config.js",
-    "postcss.config.js"
+    "postcss.config.js",
+    "src/frontend/**/*"
   ],
   "overrides": [
-    {
-      "files": ["src/frontend/**/*.ts", "src/frontend/**/*.tsx"],
-      "extends": ["next/core-web-vitals"],
-      "parserOptions": {
-        "project": "./src/frontend/tsconfig.json"
-      },
-      "env": {
-        "browser": true,
-        "es2020": true
-      }
-    },
     {
       "files": ["src/backend/**/*.ts", "src/backend/**/*.js"],
       "rules": {

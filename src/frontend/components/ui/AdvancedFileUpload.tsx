@@ -154,10 +154,13 @@ export function AdvancedFileUpload({
       }
 
       if (onFilesUploaded) {
-        onFilesUploaded(files);
+        setFiles((currentFiles) => {
+          onFilesUploaded(currentFiles);
+          return currentFiles;
+        });
       }
     },
-    [files, onFilesUploaded]
+    [onFilesUploaded]
   );
 
   const pollForAnalysisResults = async (fileId: string, analysisId: string) => {
