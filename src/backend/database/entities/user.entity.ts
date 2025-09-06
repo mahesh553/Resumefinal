@@ -7,7 +7,6 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Resume } from './resume.entity';
 import { JobApplication } from './job-application.entity';
 import { UserSubscription } from './subscription.entity';
 
@@ -63,8 +62,8 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Resume, (resume) => resume.user)
-  resumes: Resume[];
+  @OneToMany('Resume', (resume: any) => resume.user)
+  resumes: any[];
 
   @OneToMany(() => JobApplication, (job) => job.user)
   jobApplications: JobApplication[];

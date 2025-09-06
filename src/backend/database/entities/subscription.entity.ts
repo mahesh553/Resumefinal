@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
+import { SubscriptionPlan } from './subscription-plan.entity';
 
 @Entity('user_subscriptions')
 @Index(['userId']) // For user subscription queries
@@ -47,58 +47,13 @@ export class UserSubscription {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.subscriptions, { onDelete: 'CASCADE' })
+  @ManyToOne('User', (user: any) => user.subscriptions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: any;
 
   @ManyToOne(() => SubscriptionPlan, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'planId' })
   plan: SubscriptionPlan;
-}
-
-@Entity('subscription_plans')
-@Index(['name']) // For plan lookup by name
-@Index(['isActive']) // For filtering active plans
-@Index(['stripeProductId']) // For Stripe integration
-export class SubscriptionPlan {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column()
-  name: string; // free, pro_monthly, pro_3month, pro_6month
-
-  @Column()
-  displayName: string;
-
-  @Column()
-  price: number; // in cents
-
-  @Column()
-  interval: string; // month, year
-
-  @Column({ default: 1 })
-  intervalCount: number;
-
-  @Column('jsonb')
-  features: any;
-
-  @Column({ nullable: true })
-  discountPercentage?: number;
-
-  @Column({ nullable: true })
-  stripeProductId?: string;
-
-  @Column({ nullable: true })
-  stripePriceId?: string;
-
-  @Column({ default: true })
-  isActive: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
 
 @Entity('usage_records')
@@ -128,7 +83,7 @@ export class UsageRecord {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne('User', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: any;
 }

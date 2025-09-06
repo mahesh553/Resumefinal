@@ -1,31 +1,12 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
-// Entities
-import { Resume } from '../database/entities/resume.entity';
-import { ResumeVersion } from '../database/entities/resume-version.entity';
-import { JdMatching } from '../database/entities/jd-matching.entity';
-
-// Services
-import { FileParserService } from '../modules/resume-analysis/services/file-parser.service';
-import { AIModule } from '../modules/ai/ai.module';
-
-// Processors
-import { ResumeAnalysisProcessor } from './processors/resume-analysis.processor';
-import { BulkAnalysisProcessor } from './processors/bulk-analysis.processor';
-import { JDMatchingProcessor } from './processors/jd-matching.processor';
-
-// Queue types
+import { QueueService } from './queue.service';
 import { QUEUE_NAMES } from './queue.types';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Resume, ResumeVersion, JdMatching]),
-    AIModule,
-    
-    // Register all BullMQ queues
+    // Register all BullMQ queues that QueueService depends on
     BullModule.registerQueueAsync(
       {
         name: QUEUE_NAMES.RESUME_ANALYSIS,
@@ -157,18 +138,7 @@ import { QUEUE_NAMES } from './queue.types';
       }
     ),
   ],
-  providers: [
-    // Processors
-    ResumeAnalysisProcessor,
-    BulkAnalysisProcessor,
-    JDMatchingProcessor,
-    
-    // Services (import FileParserService locally since it's not in a module)
-    FileParserService,
-  ],
-  exports: [
-    // Export BullModule so other modules can inject queues
-    BullModule,
-  ],
+  providers: [QueueService],
+  exports: [QueueService],
 })
-export class QueueProcessorModule {}
+export class QueueModule {}

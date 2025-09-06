@@ -11,6 +11,7 @@ import { JdMatchingModule } from "./modules/jd-matching/jd-matching.module";
 import { JobTrackerModule } from "./modules/job-tracker/job-tracker.module";
 import { ResumeAnalysisModule } from "./modules/resume-analysis/resume-analysis.module";
 import { ResumeVersionsModule } from "./modules/resume-versions/resume-versions.module";
+import { WebSocketModule } from "./modules/websocket/websocket.module";
 import { QueueProcessorModule } from "./queues/queue-processor.module";
 
 @Module({
@@ -97,6 +98,7 @@ import { QueueProcessorModule } from "./queues/queue-processor.module";
     ResumeVersionsModule,
     AdminModule,
     HealthModule,
+    WebSocketModule,
 
     // Queue processing
     QueueProcessorModule,

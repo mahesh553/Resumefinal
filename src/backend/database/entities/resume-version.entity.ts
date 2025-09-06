@@ -7,7 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Resume } from './resume.entity';
 
 @Entity('resume_versions')
 @Index(['resumeId']) // For resume version queries
@@ -51,7 +50,7 @@ export class ResumeVersion {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Resume, (resume) => resume.versions, { onDelete: 'CASCADE' })
+  @ManyToOne('Resume', (resume: any) => resume.versions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'resumeId' })
-  resume: Resume;
+  resume: any;
 }

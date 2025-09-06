@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EnhancedPagination } from "@/components/ui/EnhancedPagination";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useJobList, useJobStats, useDeleteJob } from "@/hooks/api";
+import { useWebSocketContext } from "@/components/providers/WebSocketProvider";
 import { apiClient } from "@/lib/api";
 import { exportJobs } from "@/lib/exportUtils";
 import type { Job as _Job } from "@/types";
@@ -14,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
+import ConnectionStatusIndicator from "@/components/ui/ConnectionStatusIndicator";
 import { BulkOperations } from "./bulk/BulkOperations";
 import {
   AdvancedJobFilters,
@@ -26,6 +28,12 @@ import { ViewJobModal } from "./modals/ViewJobModal";
 
 export function JobTrackerSection() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [realTimeUpdates, setRealTimeUpdates] = useState<{
+    [jobId: string]: { action: string; timestamp: string }
+  }>({});
+  
+  // WebSocket context for real-time updates
+  const { isConnected, on } = useWebSocketContext();
   
   // Advanced filtering state
   const [filters, setFilters] = useState<JobFilters>({
@@ -105,6 +113,77 @@ export function JobTrackerSection() {
   const jobs = jobData?.data || [];
   const jobPagination = jobData?.pagination || {};
   const statusCounts = statsData?.statusCounts || {};
+
+  // WebSocket real-time event handling
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Subscribe to job updates (CRUD operations)
+    const unsubscribeJobUpdate = on('job_updated', (data: {
+      job?: any;
+      jobId?: string;
+      action: 'created' | 'updated' | 'deleted';
+      timestamp: string;
+    }) => {
+      // Update real-time status for UI feedback
+      if (data.jobId) {
+        setRealTimeUpdates(prev => ({
+          ...prev,
+          [data.jobId!]: { action: data.action, timestamp: data.timestamp }
+        }));
+        
+        // Auto-clear the update indicator after 5 seconds
+        setTimeout(() => {
+          setRealTimeUpdates(prev => {
+            const newUpdates = { ...prev };
+            if (data.jobId) {
+              delete newUpdates[data.jobId];
+            }
+            return newUpdates;
+          });
+        }, 5000);
+      }
+      
+      // Refetch job data and stats to get updated information
+      refetchJobs();
+      refetchStats();
+    });
+
+    // Subscribe to job status updates
+    const unsubscribeJobStatus = on('job_status_updated', (data: {
+      jobId: string;
+      oldStatus: string;
+      newStatus: string;
+      timestamp: string;
+    }) => {
+      // Update real-time status indicator
+      setRealTimeUpdates(prev => ({
+        ...prev,
+        [data.jobId]: { 
+          action: `status_changed_${data.newStatus}`, 
+          timestamp: data.timestamp 
+        }
+      }));
+      
+      // Auto-clear after 5 seconds
+      setTimeout(() => {
+        setRealTimeUpdates(prev => {
+          const newUpdates = { ...prev };
+          delete newUpdates[data.jobId];
+          return newUpdates;
+        });
+      }, 5000);
+      
+      // Refetch data
+      refetchJobs();
+      refetchStats();
+    });
+
+    return () => {
+      unsubscribeJobUpdate();
+      unsubscribeJobStatus();
+    };
+  }, [isConnected, on, refetchJobs, refetchStats]);
 
   // Update pagination when job data changes
   useEffect(() => {
@@ -304,10 +383,13 @@ export function JobTrackerSection() {
   return (
     <div className="card">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-display font-semibold text-gray-900 mb-2">
-            Job Tracker
-          </h2>
+        <div className="flex-1">
+          <div className="flex items-center gap-4 mb-2">
+            <h2 className="text-2xl font-display font-semibold text-gray-900">
+              Job Tracker
+            </h2>
+            <ConnectionStatusIndicator showText={true} />
+          </div>
           <p className="text-gray-600">
             Track your job applications and manage your job search progress.
           </p>
@@ -379,19 +461,35 @@ export function JobTrackerSection() {
               </div>
             </div>
           ) : (
-            displayJobs.map((job, index) => (
-              <JobItem
-                key={job.id}
-                job={job}
-                index={index}
-                isSelected={selectedJobs.includes(job.id)}
-                onSelect={handleJobSelect}
-                onView={handleViewJob}
-                onEdit={handleEditJob}
-                onDelete={handleDeleteJob}
-                searchTerm={filters.search}
-              />
-            ))
+            displayJobs.map((job, index) => {
+              const realtimeUpdate = realTimeUpdates[job.id];
+              return (
+                <div key={job.id} className="relative">
+                  {/* Real-time update indicator */}
+                  {realtimeUpdate && (
+                    <div className="absolute -top-2 right-4 z-10">
+                      <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
+                        {realtimeUpdate.action === 'created' && 'New!'}
+                        {realtimeUpdate.action === 'updated' && 'Updated!'}
+                        {realtimeUpdate.action === 'deleted' && 'Deleted!'}
+                        {realtimeUpdate.action.startsWith('status_changed_') && 
+                          `Status: ${realtimeUpdate.action.split('_')[2]}`}
+                      </div>
+                    </div>
+                  )}
+                  <JobItem
+                    job={job}
+                    index={index}
+                    isSelected={selectedJobs.includes(job.id)}
+                    onSelect={handleJobSelect}
+                    onView={handleViewJob}
+                    onEdit={handleEditJob}
+                    onDelete={handleDeleteJob}
+                    searchTerm={filters.search}
+                  />
+                </div>
+              );
+            })
           )}
         </div>
       )}

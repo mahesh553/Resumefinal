@@ -9,12 +9,13 @@ import { ResumeAnalysisController } from './resume-analysis.controller';
 import { ResumeAnalysisService } from './resume-analysis.service';
 import { FileValidationService } from './services/file-validation.service';
 import { FileParserService } from './services/file-parser.service';
-import { QueueService } from '../../queues/queue.service';
+import { QueueModule } from '../../queues/queue.module';
 import * as multer from 'multer';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Resume, ResumeVersion, User]),
+    QueueModule,
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -32,7 +33,6 @@ import * as multer from 'multer';
     ResumeAnalysisService,
     FileValidationService,
     FileParserService,
-    QueueService,
   ],
   exports: [ResumeAnalysisService, FileValidationService],
 })

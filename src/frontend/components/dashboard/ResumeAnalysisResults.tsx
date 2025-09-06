@@ -15,6 +15,7 @@ import {
   ModalTitle,
 } from "@/components/ui/Modal";
 import { useResumeList, useUserStats } from "@/hooks/api";
+import { useWebSocketContext } from "@/components/providers/WebSocketProvider";
 import type { AnalysisData, Suggestion } from "@/types";
 import {
   ChartBarIcon,
@@ -27,9 +28,10 @@ import {
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { FiDownload, FiEye, FiRefreshCw, FiTrendingUp } from "react-icons/fi";
+import ConnectionStatusIndicator from "@/components/ui/ConnectionStatusIndicator";
 
 export function ResumeAnalysisResults() {
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -37,6 +39,11 @@ export function ResumeAnalysisResults() {
     AnalysisData["suggestions"][0] | null
   >(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [realTimeProgress, setRealTimeProgress] = useState<number | null>(null);
+  const [realTimeStatus, setRealTimeStatus] = useState<string | null>(null);
+
+  // WebSocket context for real-time updates
+  const { isConnected, on } = useWebSocketContext();
 
   // React Query hooks
   const {
@@ -140,6 +147,61 @@ export function ResumeAnalysisResults() {
   // Derived loading and error states
   const isLoading = isLoadingResumes || isLoadingStats;
   const error = resumeError || statsError;
+
+  // WebSocket real-time event handling
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Subscribe to resume analysis progress
+    const unsubscribeProgress = on('resume_analysis_progress', (data: {
+      analysisId: string;
+      progress: number;
+      status: string;
+    }) => {
+      setRealTimeProgress(data.progress);
+      setRealTimeStatus(data.status);
+      
+      // Show progress toast only for significant progress updates
+      if (data.progress % 25 === 0) {
+        toast.loading(`Analysis ${data.progress}% complete`, {
+          id: `progress-${data.analysisId}`,
+          duration: 2000,
+        });
+      }
+    });
+
+    // Subscribe to resume analysis completion
+    const unsubscribeComplete = on('resume_analysis_complete', (data: {
+      analysisId: string;
+      result: any;
+    }) => {
+      setRealTimeProgress(null);
+      setRealTimeStatus(null);
+      
+      // Dismiss any existing progress toasts
+      toast.dismiss(`progress-${data.analysisId}`);
+      
+      // Refetch resume data to get updated results
+      refetchResumes();
+    });
+
+    // Subscribe to resume analysis errors
+    const unsubscribeError = on('resume_analysis_error', (data: {
+      analysisId: string;
+      error: string;
+    }) => {
+      setRealTimeProgress(null);
+      setRealTimeStatus(null);
+      
+      toast.dismiss(`progress-${data.analysisId}`);
+    });
+
+    return () => {
+      unsubscribeProgress();
+      unsubscribeComplete();
+      unsubscribeError();
+    };
+  }, [isConnected, on, refetchResumes]);
 
 
 
@@ -264,7 +326,7 @@ export function ResumeAnalysisResults() {
     );
   }
 
-  if (analysisData.isProcessing) {
+  if (analysisData.isProcessing || realTimeProgress !== null) {
     return (
       <div className="card text-center py-12">
         <div className="w-16 h-16 mx-auto mb-4">
@@ -277,6 +339,35 @@ export function ResumeAnalysisResults() {
           Your resume "{analysisData.fileName}" is being analyzed. This usually
           takes 2-3 minutes.
         </p>
+        
+        {/* Real-time progress display */}
+        {(realTimeProgress !== null || realTimeStatus) && (
+          <div className="max-w-md mx-auto mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                {realTimeStatus || 'Processing...'}
+              </span>
+              {realTimeProgress !== null && (
+                <span className="text-sm text-gray-600">{realTimeProgress}%</span>
+              )}
+            </div>
+            {realTimeProgress !== null && (
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${realTimeProgress}%` }}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-center mt-2 gap-2">
+              <ConnectionStatusIndicator />
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Real-time updates active' : 'Updates paused'}
+              </span>
+            </div>
+          </div>
+        )}
+        
         <Button onClick={handleRefresh} variant="secondary">
           <FiRefreshCw className="mr-2 w-4 h-4" />
           Check Status
@@ -306,7 +397,39 @@ export function ResumeAnalysisResults() {
               <ClockIcon className="w-4 h-4" />
               Analyzed {new Date(analysisData.uploadedAt).toLocaleDateString()}
             </div>
+            {/* Real-time connection status */}
+            <ConnectionStatusIndicator className="ml-auto" showText={true} />
           </div>
+                  
+          {/* Real-time progress indicator */}
+          {(realTimeProgress !== null || realTimeStatus) && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-blue-900">
+                      {realTimeStatus || 'Processing...'}
+                    </span>
+                    {realTimeProgress !== null && (
+                      <span className="text-sm text-blue-700">{realTimeProgress}%</span>
+                    )}
+                  </div>
+                  {realTimeProgress !== null && (
+                    <div className="w-full bg-blue-100 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${realTimeProgress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

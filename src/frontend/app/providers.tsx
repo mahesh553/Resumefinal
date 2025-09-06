@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@ta
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
+import { WebSocketProvider } from '../components/providers/WebSocketProvider';
 
 // Enhanced QueryClient configuration
 const queryClient = new QueryClient({
@@ -86,7 +87,9 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        {children}
+        <WebSocketProvider autoConnect={true} showNotifications={true}>
+          {children}
+        </WebSocketProvider>
       </SessionProvider>
       {/* Only show React Query Devtools in development */}
       {process.env.NODE_ENV === 'development' && (

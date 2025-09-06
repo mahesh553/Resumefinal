@@ -10,7 +10,6 @@ import {
   Index,
 } from 'typeorm';
 import { User } from './user.entity';
-import { ResumeVersion } from './resume-version.entity';
 
 @Entity('resumes')
 @Index(['userId']) // For user resume queries
@@ -60,6 +59,6 @@ export class Resume {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @OneToMany(() => ResumeVersion, (version) => version.resume)
-  versions: ResumeVersion[];
+  @OneToMany('ResumeVersion', (version: any) => version.resume)
+  versions: any[];
 }

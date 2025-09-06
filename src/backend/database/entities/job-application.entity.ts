@@ -8,7 +8,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from './user.entity';
 
 export enum JobStatus {
   APPLIED = 'applied',
@@ -84,7 +83,7 @@ export class JobApplication {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.jobApplications, { onDelete: 'CASCADE' })
+  @ManyToOne('User', (user: any) => user.jobApplications, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: any;
 }
