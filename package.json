@@ -9,6 +9,7 @@
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "next build",
     "build:backend": "nest build",
+    "build:check": "npm run build:frontend",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "next start -p 3000",
     "start:backend": "node dist/main",
@@ -16,7 +17,18 @@
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "docker:dev": "cd infrastructure/docker && docker-compose up -d postgres redis",
+    "docker:down": "cd infrastructure/docker && docker-compose down",
+    "setup": "node scripts/setup.js || npm install --legacy-peer-deps",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/backend/database/migration-data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/backend/database/migration-data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/backend/database/migration-data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/backend/database/migration-data-source.ts",
+    "schema:sync": "typeorm-ts-node-commonjs schema:sync -d src/backend/database/migration-data-source.ts",
+    "schema:drop": "typeorm-ts-node-commonjs schema:drop -d src/backend/database/migration-data-source.ts",
+    "db:optimize": "node scripts/db-optimize.js",
+    "db:health": "node scripts/db-optimize.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.7.0",
@@ -33,6 +45,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/platform-socket.io": "^11.0.0",
     "@nestjs/swagger": "^8.0.0",
+    "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^10.0.0",
     "@nestjs/websockets": "^11.0.0",
     "@stripe/stripe-js": "^2.0.0",
@@ -54,7 +67,7 @@
     "jsonwebtoken": "^9.0.0",
     "mammoth": "^1.6.0",
     "multer": "^1.4.5-lts.1",
-    "next": "14.0.0",
+    "next": "^14.2.32",
     "next-auth": "^4.24.0",
     "openai": "^4.20.0",
     "passport": "^0.6.0",
@@ -83,7 +96,7 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.0",
+    "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@playwright/test": "^1.40.0",

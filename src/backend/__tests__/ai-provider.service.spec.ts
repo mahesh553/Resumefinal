@@ -1,15 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { ConfigService } from "@nestjs/config";
+import { Test, TestingModule } from "@nestjs/testing";
+import Redis from "ioredis";
 
-import { AIProviderService } from '../modules/ai/services/ai-provider.service';
-import { GeminiProvider } from '../modules/ai/providers/gemini.provider';
-import { OpenAIProvider } from '../modules/ai/providers/openai.provider';
-import { ClaudeProvider } from '../modules/ai/providers/claude.provider';
-import { ResumeAnalysisResult, JDMatchResult, SkillCategory, SkillLevel } from '../modules/ai/interfaces/ai-provider.interface';
+import {
+  JDMatchResult,
+  ResumeAnalysisResult,
+  SkillCategory,
+  SkillLevel,
+} from "../modules/ai/interfaces/ai-provider.interface";
+import { ClaudeProvider } from "../modules/ai/providers/claude.provider";
+import { GeminiProvider } from "../modules/ai/providers/gemini.provider";
+import { OpenAIProvider } from "../modules/ai/providers/openai.provider";
+import { AIProviderService } from "../modules/ai/services/ai-provider.service";
 
 // Mock Redis
-jest.mock('ioredis', () => {
+jest.mock("ioredis", () => {
   return jest.fn().mockImplementation(() => ({
     get: jest.fn(),
     setex: jest.fn(),
@@ -20,7 +25,7 @@ jest.mock('ioredis', () => {
   }));
 });
 
-describe('AIProviderService', () => {
+describe("AIProviderService", () => {
   let service: AIProviderService;
   let configService: jest.Mocked<ConfigService>;
   let geminiProvider: jest.Mocked<GeminiProvider>;
@@ -31,30 +36,45 @@ describe('AIProviderService', () => {
   const mockAnalysisResult: ResumeAnalysisResult = {
     atsScore: 85,
     skills: [
-      { name: 'JavaScript', category: SkillCategory.TECHNICAL, confidence: 0.9, level: SkillLevel.ADVANCED },
-      { name: 'Communication', category: SkillCategory.SOFT, confidence: 0.8, level: SkillLevel.INTERMEDIATE }
+      {
+        name: "JavaScript",
+        category: SkillCategory.TECHNICAL,
+        confidence: 0.9,
+        level: SkillLevel.ADVANCED,
+      },
+      {
+        name: "Communication",
+        category: SkillCategory.SOFT,
+        confidence: 0.8,
+        level: SkillLevel.INTERMEDIATE,
+      },
     ],
-    suggestions: ['Add more quantifiable achievements'],
+    suggestions: ["Add more quantifiable achievements"],
     personalInfo: {
-      name: 'John Doe',
-      email: 'john@example.com'
+      name: "John Doe",
+      email: "john@example.com",
     },
     experience: [],
     education: [],
     confidence: 0.85,
     processingTime: 1500,
-    text: 'Analysis completed successfully',
+    text: "Analysis completed successfully",
   };
 
   const mockJDMatchResult: JDMatchResult = {
     overallScore: 78,
     skillMatches: [
-      { skill: 'JavaScript', resumeStrength: 0.9, jdRequirement: 0.7, isMatch: true },
+      {
+        skill: "JavaScript",
+        resumeStrength: 0.9,
+        jdRequirement: 0.7,
+        isMatch: true,
+      },
     ],
-    missingSkills: ['Python', 'Docker'],
-    strengthAreas: ['Frontend Development'],
-    improvementAreas: ['Backend Technologies'],
-    recommendations: ['Consider adding Python experience'],
+    missingSkills: ["Python", "Docker"],
+    strengthAreas: ["Frontend Development"],
+    improvementAreas: ["Backend Technologies"],
+    recommendations: ["Consider adding Python experience"],
     confidence: 0.78,
   };
 
@@ -74,7 +94,7 @@ describe('AIProviderService', () => {
     };
 
     const mockGeminiProvider = {
-      name: 'gemini',
+      name: "gemini",
       isHealthy: true,
       priority: 1,
       costPerToken: 0.000125,
@@ -84,7 +104,7 @@ describe('AIProviderService', () => {
     };
 
     const mockOpenAIProvider = {
-      name: 'openai',
+      name: "openai",
       isHealthy: true,
       priority: 2,
       costPerToken: 0.002,
@@ -94,7 +114,7 @@ describe('AIProviderService', () => {
     };
 
     const mockClaudeProvider = {
-      name: 'claude',
+      name: "claude",
       isHealthy: false,
       priority: 3,
       costPerToken: 0.003,
@@ -110,7 +130,7 @@ describe('AIProviderService', () => {
           useValue: mockConfigService,
         },
         {
-          provide: 'REDIS',
+          provide: "REDIS",
           useValue: mockRedis,
         },
         {
@@ -132,17 +152,23 @@ describe('AIProviderService', () => {
             redis: Redis,
             geminiProvider: GeminiProvider,
             openaiProvider: OpenAIProvider,
-            claudeProvider: ClaudeProvider,
+            claudeProvider: ClaudeProvider
           ) => {
             return new AIProviderService(
               configService,
               redis,
               geminiProvider,
               openaiProvider,
-              claudeProvider,
+              claudeProvider
             );
           },
-          inject: [ConfigService, 'REDIS', GeminiProvider, OpenAIProvider, ClaudeProvider],
+          inject: [
+            ConfigService,
+            "REDIS",
+            GeminiProvider,
+            OpenAIProvider,
+            ClaudeProvider,
+          ],
         },
       ],
     }).compile();
@@ -156,8 +182,8 @@ describe('AIProviderService', () => {
     // Setup default config values
     configService.get.mockImplementation((key: string, defaultValue?: any) => {
       const config: Record<string, any> = {
-        AI_CACHE_ENABLED: 'true',
-        AI_CACHE_TTL: '86400',
+        AI_CACHE_ENABLED: "true",
+        AI_CACHE_TTL: "86400",
       };
       return config[key] || defaultValue;
     });
@@ -167,15 +193,15 @@ describe('AIProviderService', () => {
     jest.clearAllMocks();
   });
 
-  describe('analyzeResume', () => {
-    const resumeContent = 'Software Engineer with 5 years experience...';
-    const fileName = 'resume.pdf';
+  describe("analyzeResume", () => {
+    const resumeContent = "Software Engineer with 5 years experience...";
+    const fileName = "resume.pdf";
 
-    it('should analyze resume using primary provider (Gemini)', async () => {
+    it("should analyze resume using primary provider (Gemini)", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null); // No cache
       geminiProvider.analyze.mockResolvedValue(mockAnalysisResult);
-      mockRedis.setex.mockResolvedValue('OK');
+      mockRedis.setex.mockResolvedValue("OK");
 
       // Act
       const result = await service.analyzeResume({
@@ -184,12 +210,14 @@ describe('AIProviderService', () => {
       });
 
       // Assert
-      expect(geminiProvider.analyze).toHaveBeenCalledWith(resumeContent, { fileName });
+      expect(geminiProvider.analyze).toHaveBeenCalledWith(resumeContent, {
+        fileName,
+      });
       expect(result).toEqual(mockAnalysisResult);
       expect(mockRedis.setex).toHaveBeenCalled(); // Cache was set
     });
 
-    it('should return cached result if available', async () => {
+    it("should return cached result if available", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(JSON.stringify(mockAnalysisResult));
 
@@ -204,16 +232,16 @@ describe('AIProviderService', () => {
       expect(result).toEqual(mockAnalysisResult);
     });
 
-    it('should fallback to secondary provider if primary fails', async () => {
+    it("should fallback to secondary provider if primary fails", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null);
-      geminiProvider.analyze.mockRejectedValue(new Error('Gemini API error'));
+      geminiProvider.analyze.mockRejectedValue(new Error("Gemini API error"));
       openaiProvider.analyze.mockResolvedValue({
         ...mockAnalysisResult,
       });
 
       // Act
-      const result = await service.analyzeResume({
+      const _result = await service.analyzeResume({
         content: resumeContent,
         fileName,
       });
@@ -224,21 +252,23 @@ describe('AIProviderService', () => {
       expect(geminiProvider.isHealthy).toBe(false); // Provider marked as unhealthy
     });
 
-    it('should throw error if all providers fail', async () => {
+    it("should throw error if all providers fail", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null);
-      geminiProvider.analyze.mockRejectedValue(new Error('Gemini failed'));
-      openaiProvider.analyze.mockRejectedValue(new Error('OpenAI failed'));
-      claudeProvider.analyze.mockRejectedValue(new Error('Claude failed'));
+      geminiProvider.analyze.mockRejectedValue(new Error("Gemini failed"));
+      openaiProvider.analyze.mockRejectedValue(new Error("OpenAI failed"));
+      claudeProvider.analyze.mockRejectedValue(new Error("Claude failed"));
 
       // Act & Assert
-      await expect(service.analyzeResume({
-        content: resumeContent,
-        fileName,
-      })).rejects.toThrow('All AI providers failed for resume analysis');
+      await expect(
+        service.analyzeResume({
+          content: resumeContent,
+          fileName,
+        })
+      ).rejects.toThrow("All AI providers failed for resume analysis");
     });
 
-    it('should use specific provider when requested', async () => {
+    it("should use specific provider when requested", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null);
       openaiProvider.analyze.mockResolvedValue({
@@ -246,7 +276,7 @@ describe('AIProviderService', () => {
       });
 
       // Act
-      const result = await service.analyzeResume({
+      const _result = await service.analyzeResume({
         content: resumeContent,
         fileName,
       });
@@ -257,17 +287,21 @@ describe('AIProviderService', () => {
     });
   });
 
-  describe('matchJobDescription', () => {
-    const resumeText = 'Software Engineer with JavaScript experience...';
-    const jobDescription = 'Looking for Python developer with 3+ years experience...';
+  describe("matchJobDescription", () => {
+    const resumeText = "Software Engineer with JavaScript experience...";
+    const jobDescription =
+      "Looking for Python developer with 3+ years experience...";
 
-    it('should match job description successfully', async () => {
+    it("should match job description successfully", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null);
       geminiProvider.matchJobDescription.mockResolvedValue(mockJDMatchResult);
 
       // Act
-      const result = await service.matchJobDescription(resumeText, jobDescription);
+      const result = await service.matchJobDescription(
+        resumeText,
+        jobDescription
+      );
 
       // Assert
       expect(geminiProvider.matchJobDescription).toHaveBeenCalledWith(
@@ -278,16 +312,21 @@ describe('AIProviderService', () => {
       expect(result).toEqual(mockJDMatchResult);
     });
 
-    it('should handle provider failure with fallback', async () => {
+    it("should handle provider failure with fallback", async () => {
       // Arrange
       mockRedis.get.mockResolvedValue(null);
-      geminiProvider.matchJobDescription.mockRejectedValue(new Error('Gemini failed'));
+      geminiProvider.matchJobDescription.mockRejectedValue(
+        new Error("Gemini failed")
+      );
       openaiProvider.matchJobDescription.mockResolvedValue({
         ...mockJDMatchResult,
       });
 
       // Act
-      const result = await service.matchJobDescription(resumeText, jobDescription);
+      const _result = await service.matchJobDescription(
+        resumeText,
+        jobDescription
+      );
 
       // Assert
       expect(geminiProvider.matchJobDescription).toHaveBeenCalled();
@@ -295,22 +334,25 @@ describe('AIProviderService', () => {
     });
   });
 
-  describe('generateSuggestions', () => {
-    const resumeText = 'Software Engineer resume content...';
-    const jobDescription = 'Job requirements...';
+  describe("generateSuggestions", () => {
+    const resumeText = "Software Engineer resume content...";
+    const jobDescription = "Job requirements...";
 
-    it('should generate suggestions successfully', async () => {
+    it("should generate suggestions successfully", async () => {
       // Arrange
       const mockSuggestions = [
-        'Add more quantifiable achievements',
-        'Include relevant certifications',
-        'Highlight leadership experience',
+        "Add more quantifiable achievements",
+        "Include relevant certifications",
+        "Highlight leadership experience",
       ];
       mockRedis.get.mockResolvedValue(null);
       geminiProvider.generateSuggestions.mockResolvedValue(mockSuggestions);
 
       // Act
-      const result = await service.generateSuggestions(resumeText, jobDescription);
+      const result = await service.generateSuggestions(
+        resumeText,
+        jobDescription
+      );
 
       // Assert
       expect(geminiProvider.generateSuggestions).toHaveBeenCalledWith(
@@ -322,8 +364,8 @@ describe('AIProviderService', () => {
     });
   });
 
-  describe('getProviderHealth', () => {
-    it('should return health status of all providers', async () => {
+  describe("getProviderHealth", () => {
+    it("should return health status of all providers", async () => {
       // Act
       const result = await service.getProviderHealth();
 
@@ -351,8 +393,8 @@ describe('AIProviderService', () => {
     });
   });
 
-  describe('resetProviderHealth', () => {
-    it('should reset all providers to healthy status', async () => {
+  describe("resetProviderHealth", () => {
+    it("should reset all providers to healthy status", async () => {
       // Arrange
       geminiProvider.isHealthy = false;
       openaiProvider.isHealthy = false;

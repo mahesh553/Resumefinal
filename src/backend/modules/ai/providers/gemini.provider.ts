@@ -1,50 +1,58 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
+  AIAnalysisOptions,
+  AIMatchingOptions,
   AIProvider,
-  ResumeAnalysisResult,
+  AISuggestionOptions,
+  Education,
   JDMatchResult,
+  ResumeAnalysisResult,
   SkillCategory,
   SkillLevel,
-  AIAnalysisOptions,
-  AISuggestionOptions,
-  AIMatchingOptions,
-  WorkExperience,
-  Education,
   SkillMatch,
-} from '../interfaces/ai-provider.interface';
+  WorkExperience,
+} from "../interfaces/ai-provider.interface";
 
 @Injectable()
 export class GeminiProvider implements AIProvider {
-  name = 'gemini';
+  name = "gemini";
   isHealthy = true;
   priority = 1; // Highest priority as primary provider
   costPerToken = 0.000125; // Gemini Pro pricing per 1K tokens
 
   private readonly logger = new Logger(GeminiProvider.name);
   private client: GoogleGenerativeAI;
-  private model: import('@google/generative-ai').GenerativeModel;
+  private model: import("@google/generative-ai").GenerativeModel;
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get('GEMINI_API_KEY');
+    const apiKey = this.configService.get("GEMINI_API_KEY");
     if (!apiKey) {
-      this.logger.warn('Gemini API key not configured');
+      this.logger.warn("Gemini API key not configured");
       this.isHealthy = false;
       return;
     }
 
     try {
       this.client = new GoogleGenerativeAI(apiKey);
-      this.model = this.client.getGenerativeModel({ model: 'gemini-pro' });
-      this.logger.log('Gemini provider initialized successfully');
+      // Try using the latest model based on API example
+      this.model = this.client.getGenerativeModel({
+        model: "gemini-2.0-flash",
+      });
+      this.logger.log(
+        "Gemini provider initialized successfully with gemini-2.0-flash"
+      );
     } catch (error) {
-      this.logger.error('Failed to initialize Gemini provider', error);
+      this.logger.error("Failed to initialize Gemini provider", error);
       this.isHealthy = false;
     }
   }
 
-  async analyze(text: string, options?: AIAnalysisOptions): Promise<ResumeAnalysisResult> {
+  async analyze(
+    text: string,
+    options?: AIAnalysisOptions
+  ): Promise<ResumeAnalysisResult> {
     const startTime = Date.now();
 
     try {
@@ -55,51 +63,72 @@ export class GeminiProvider implements AIProvider {
 
       const analysis = this.parseAnalysisResponse(analysisText);
       analysis.processingTime = Date.now() - startTime;
-      
-      this.logger.log(`Resume analysis completed in ${analysis.processingTime}ms`);
-      return analysis;
 
+      this.logger.log(
+        `Resume analysis completed in ${analysis.processingTime}ms`
+      );
+      return analysis;
     } catch (error: unknown) {
-      this.logger.error('Gemini analysis failed', error);
+      this.logger.error("Gemini analysis failed", error);
       this.isHealthy = false;
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       throw new Error(`Gemini analysis failed: ${errorMessage}`);
     }
   }
 
-  async generateSuggestions(resumeText: string, jobDescription?: string, options?: AISuggestionOptions): Promise<string[]> {
+  async generateSuggestions(
+    resumeText: string,
+    jobDescription?: string,
+    options?: AISuggestionOptions
+  ): Promise<string[]> {
     try {
-      const prompt = this.buildSuggestionPrompt(resumeText, jobDescription, options);
+      const prompt = this.buildSuggestionPrompt(
+        resumeText,
+        jobDescription,
+        options
+      );
       const result = await this.model.generateContent(prompt);
       const response = result.response;
       const suggestionsText = response.text();
 
       return this.parseSuggestionsResponse(suggestionsText);
-
     } catch (error: unknown) {
-      this.logger.error('Gemini suggestion generation failed', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error("Gemini suggestion generation failed", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       throw new Error(`Gemini suggestion generation failed: ${errorMessage}`);
     }
   }
 
-  async matchJobDescription(resumeText: string, jobDescription: string, options?: AIMatchingOptions): Promise<JDMatchResult> {
+  async matchJobDescription(
+    resumeText: string,
+    jobDescription: string,
+    options?: AIMatchingOptions
+  ): Promise<JDMatchResult> {
     try {
-      const prompt = this.buildMatchingPrompt(resumeText, jobDescription, options);
+      const prompt = this.buildMatchingPrompt(
+        resumeText,
+        jobDescription,
+        options
+      );
       const result = await this.model.generateContent(prompt);
       const response = result.response;
       const matchText = response.text();
 
       return this.parseMatchingResponse(matchText);
-
     } catch (error: unknown) {
-      this.logger.error('Gemini JD matching failed', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error("Gemini JD matching failed", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       throw new Error(`Gemini JD matching failed: ${errorMessage}`);
     }
   }
 
-  private buildAnalysisPrompt(resumeText: string, _options?: AIAnalysisOptions): string {
+  private buildAnalysisPrompt(
+    resumeText: string,
+    _options?: AIAnalysisOptions
+  ): string {
     return `
 Analyze the following resume and provide a comprehensive analysis in JSON format:
 
@@ -165,7 +194,11 @@ Focus on:
 `;
   }
 
-  private buildSuggestionPrompt(resumeText: string, jobDescription?: string, _options?: AISuggestionOptions): string {
+  private buildSuggestionPrompt(
+    resumeText: string,
+    jobDescription?: string,
+    _options?: AISuggestionOptions
+  ): string {
     let prompt = `
 Generate specific, actionable resume improvement suggestions based on the following resume:
 
@@ -196,13 +229,17 @@ Each suggestion should:
 - Address ATS optimization
 - Focus on impact and achievements
 - Suggest relevant keywords or skills to add
-${jobDescription ? '- Align with the target job requirements' : ''}
+${jobDescription ? "- Align with the target job requirements" : ""}
 `;
 
     return prompt;
   }
 
-  private buildMatchingPrompt(resumeText: string, jobDescription: string, _options?: AIMatchingOptions): string {
+  private buildMatchingPrompt(
+    resumeText: string,
+    jobDescription: string,
+    _options?: AIMatchingOptions
+  ): string {
     return `
 Analyze how well this resume matches the job description:
 
@@ -246,7 +283,7 @@ Focus on:
       // Extract JSON from response (in case there's additional text)
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+        throw new Error("No valid JSON found in response");
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as {
@@ -265,28 +302,38 @@ Focus on:
         summary?: string;
         confidence?: number;
       };
-      
+
       // Validate and set defaults
       return {
         atsScore: Math.min(100, Math.max(0, parsed.atsScore || 0)),
-        skills: Array.isArray(parsed.skills) ? parsed.skills.map((skill: any) => ({
-          name: skill.name || '',
-          category: (skill.category as SkillCategory) || SkillCategory.TECHNICAL,
-          confidence: Math.min(1, Math.max(0, skill.confidence || 0.5)),
-          yearsExperience: skill.yearsExperience || undefined,
-          level: (skill.level as SkillLevel) || SkillLevel.INTERMEDIATE,
-        })) : [],
-        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        skills: Array.isArray(parsed.skills)
+          ? parsed.skills.map((skill: any) => ({
+              name: skill.name || "",
+              category:
+                (skill.category as SkillCategory) || SkillCategory.TECHNICAL,
+              confidence: Math.min(1, Math.max(0, skill.confidence || 0.5)),
+              yearsExperience: skill.yearsExperience || undefined,
+              level: (skill.level as SkillLevel) || SkillLevel.INTERMEDIATE,
+            }))
+          : [],
+        suggestions: Array.isArray(parsed.suggestions)
+          ? parsed.suggestions
+          : [],
         personalInfo: parsed.personalInfo || {},
-        experience: Array.isArray(parsed.experience) ? parsed.experience as WorkExperience[] : [],
-        education: Array.isArray(parsed.education) ? parsed.education as Education[] : [],
-        summary: parsed.summary || '',
+        experience: Array.isArray(parsed.experience)
+          ? (parsed.experience as WorkExperience[])
+          : [],
+        education: Array.isArray(parsed.education)
+          ? (parsed.education as Education[])
+          : [],
+        summary: parsed.summary || "",
         confidence: Math.min(1, Math.max(0, parsed.confidence || 0.7)),
         processingTime: 0, // Will be set by caller
       };
     } catch (error: unknown) {
-      this.logger.error('Failed to parse Gemini analysis response', error);
-      const errorMessage = error instanceof Error ? error.message : 'Parse error';
+      this.logger.error("Failed to parse Gemini analysis response", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Parse error";
       throw new Error(`Invalid response format: ${errorMessage}`);
     }
   }
@@ -297,17 +344,17 @@ Focus on:
       if (!jsonMatch) {
         // Fallback: split by lines and filter
         return response
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 10)
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 10)
           .slice(0, 8);
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
       return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
     } catch (error) {
-      this.logger.error('Failed to parse suggestions response', error);
-      return ['Unable to generate suggestions at this time'];
+      this.logger.error("Failed to parse suggestions response", error);
+      return ["Unable to generate suggestions at this time"];
     }
   }
 
@@ -315,7 +362,7 @@ Focus on:
     try {
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+        throw new Error("No valid JSON found in response");
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as {
@@ -327,19 +374,30 @@ Focus on:
         recommendations?: string[];
         confidence?: number;
       };
-      
+
       return {
         overallScore: Math.min(100, Math.max(0, parsed.overallScore || 0)),
-        skillMatches: Array.isArray(parsed.skillMatches) ? parsed.skillMatches as SkillMatch[] : [],
-        missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
-        strengthAreas: Array.isArray(parsed.strengthAreas) ? parsed.strengthAreas : [],
-        improvementAreas: Array.isArray(parsed.improvementAreas) ? parsed.improvementAreas : [],
-        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+        skillMatches: Array.isArray(parsed.skillMatches)
+          ? (parsed.skillMatches as SkillMatch[])
+          : [],
+        missingSkills: Array.isArray(parsed.missingSkills)
+          ? parsed.missingSkills
+          : [],
+        strengthAreas: Array.isArray(parsed.strengthAreas)
+          ? parsed.strengthAreas
+          : [],
+        improvementAreas: Array.isArray(parsed.improvementAreas)
+          ? parsed.improvementAreas
+          : [],
+        recommendations: Array.isArray(parsed.recommendations)
+          ? parsed.recommendations
+          : [],
         confidence: Math.min(1, Math.max(0, parsed.confidence || 0.7)),
       };
     } catch (error: unknown) {
-      this.logger.error('Failed to parse matching response', error);
-      const errorMessage = error instanceof Error ? error.message : 'Parse error';
+      this.logger.error("Failed to parse matching response", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Parse error";
       throw new Error(`Invalid response format: ${errorMessage}`);
     }
   }

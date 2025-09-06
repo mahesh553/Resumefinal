@@ -6,10 +6,16 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('user_subscriptions')
+@Index(['userId']) // For user subscription queries
+@Index(['stripeSubscriptionId']) // For Stripe webhook processing
+@Index(['status']) // For filtering by subscription status
+@Index(['currentPeriodEnd']) // For subscription expiry checks
+@Index(['userId', 'status']) // For active user subscription queries
 export class UserSubscription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -41,12 +47,19 @@ export class UserSubscription {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.subscriptions)
+  @ManyToOne(() => User, (user) => user.subscriptions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToOne(() => SubscriptionPlan, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'planId' })
+  plan: SubscriptionPlan;
 }
 
 @Entity('subscription_plans')
+@Index(['name']) // For plan lookup by name
+@Index(['isActive']) // For filtering active plans
+@Index(['stripeProductId']) // For Stripe integration
 export class SubscriptionPlan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -89,6 +102,10 @@ export class SubscriptionPlan {
 }
 
 @Entity('usage_records')
+@Index(['userId']) // For user usage queries
+@Index(['userId', 'feature']) // For feature-specific usage
+@Index(['date']) // For usage analytics by date
+@Index(['userId', 'date']) // For user usage history
 export class UsageRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -111,7 +128,7 @@ export class UsageRecord {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 }

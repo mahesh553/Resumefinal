@@ -1,33 +1,37 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useSession } from 'next-auth/react';
+import { AdvancedFileUpload } from "@/components/ui/AdvancedFileUpload";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
 import {
-  FiUser,
+  FiBarChart,
+  FiBell,
+  FiClock,
   FiFileText,
+  FiHelpCircle,
+  FiPlus,
+  FiSearch,
+  FiSettings,
   FiTarget,
   FiTrendingUp,
-  FiClock,
-  FiSettings,
-  FiHelpCircle,
-  FiBell,
-  FiSearch,
-  FiPlus,
-} from 'react-icons/fi';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { AdvancedFileUpload } from '@/components/ui/AdvancedFileUpload';
-import { ResumeAnalysisResults } from './ResumeAnalysisResults';
-import { JobTrackerSection } from './JobTrackerSection';
+  FiUser,
+  FiZap,
+} from "react-icons/fi";
+import { AnalyticsInsights } from "./AnalyticsInsights";
+import { JobDescriptionMatching } from "./JobDescriptionMatching";
+import { JobTrackerSection } from "./JobTrackerSection";
+import { ResumeAnalysisResults } from "./ResumeAnalysisResults";
 
 export function DashboardLayout() {
   const { data: session, status } = useSession();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -36,18 +40,40 @@ export function DashboardLayout() {
   }
 
   const navigation = [
-    { id: 'overview', label: 'Overview', icon: FiTrendingUp },
-    { id: 'upload', label: 'Upload Resume', icon: FiFileText },
-    { id: 'analysis', label: 'Analysis Results', icon: FiTarget },
-    { id: 'jobs', label: 'Job Tracker', icon: FiClock },
-    { id: 'settings', label: 'Settings', icon: FiSettings },
+    { id: "overview", label: "Overview", icon: FiTrendingUp },
+    { id: "upload", label: "Upload Resume", icon: FiFileText },
+    { id: "analysis", label: "Analysis Results", icon: FiTarget },
+    { id: "matching", label: "Job Matching", icon: FiZap },
+    { id: "analytics", label: "Analytics", icon: FiBarChart },
+    { id: "jobs", label: "Job Tracker", icon: FiClock },
+    { id: "settings", label: "Settings", icon: FiSettings },
   ];
 
   const stats = [
-    { label: 'Resumes Analyzed', value: '12', change: '+3 this week', color: 'text-blue-600' },
-    { label: 'Average ATS Score', value: '78%', change: '+5% improvement', color: 'text-green-600' },
-    { label: 'Job Applications', value: '24', change: '+8 this month', color: 'text-purple-600' },
-    { label: 'Interview Calls', value: '6', change: '+2 this week', color: 'text-orange-600' },
+    {
+      label: "Resumes Analyzed",
+      value: "12",
+      change: "+3 this week",
+      color: "text-blue-600",
+    },
+    {
+      label: "Average ATS Score",
+      value: "78%",
+      change: "+5% improvement",
+      color: "text-green-600",
+    },
+    {
+      label: "Job Applications",
+      value: "24",
+      change: "+8 this month",
+      color: "text-purple-600",
+    },
+    {
+      label: "Interview Calls",
+      value: "6",
+      change: "+2 this week",
+      color: "text-orange-600",
+    },
   ];
 
   return (
@@ -95,7 +121,7 @@ export function DashboardLayout() {
                 </div>
                 <div className="hidden md:block">
                   <p className="text-sm font-medium text-gray-900">
-                    {session?.user?.name || 'User'}
+                    {session?.user?.name || "User"}
                   </p>
                   <p className="text-xs text-gray-500">Free Plan</p>
                 </div>
@@ -117,23 +143,32 @@ export function DashboardLayout() {
             {navigation.map((item) => {
               const IconComponent = item.icon;
               const isActive = activeTab === item.id;
-              
+
               return (
                 <motion.button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.id === "settings") {
+                      window.location.href = "/settings";
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   className={`
                     w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left
                     transition-all duration-200
-                    ${isActive 
-                      ? 'bg-primary-50 text-primary-700 border border-primary-200' 
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ${
+                      isActive
+                        ? "bg-primary-50 text-primary-700 border border-primary-200"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }
                   `}
                 >
-                  <IconComponent className={`w-5 h-5 ${isActive ? 'text-primary-600' : ''}`} />
+                  <IconComponent
+                    className={`w-5 h-5 ${isActive ? "text-primary-600" : ""}`}
+                  />
                   <span className="font-medium">{item.label}</span>
                 </motion.button>
               );
@@ -150,20 +185,29 @@ export function DashboardLayout() {
               className="mb-8"
             >
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {navigation.find(nav => nav.id === activeTab)?.label}
+                {navigation.find((nav) => nav.id === activeTab)?.label}
               </h2>
               <p className="text-gray-600">
-                {activeTab === 'overview' && 'Monitor your resume optimization progress and job search analytics'}
-                {activeTab === 'upload' && 'Upload and analyze your resume with AI-powered insights'}
-                {activeTab === 'analysis' && 'View detailed analysis results and improvement suggestions'}
-                {activeTab === 'jobs' && 'Track your job applications and manage your career pipeline'}
-                {activeTab === 'settings' && 'Customize your account and preferences'}
+                {activeTab === "overview" &&
+                  "Monitor your resume optimization progress and job search analytics"}
+                {activeTab === "upload" &&
+                  "Upload and analyze your resume with AI-powered insights"}
+                {activeTab === "analysis" &&
+                  "View detailed analysis results and improvement suggestions"}
+                {activeTab === "matching" &&
+                  "Match your resume against job descriptions for optimization suggestions"}
+                {activeTab === "analytics" &&
+                  "Explore data-driven insights and track your job search performance"}
+                {activeTab === "jobs" &&
+                  "Track your job applications and manage your career pipeline"}
+                {activeTab === "settings" &&
+                  "Customize your account and preferences"}
               </p>
             </motion.div>
 
             {/* Tab Content */}
             <div className="space-y-8">
-              {activeTab === 'overview' && (
+              {activeTab === "overview" && (
                 <>
                   {/* Stats Grid */}
                   <motion.div
@@ -184,12 +228,22 @@ export function DashboardLayout() {
                           <CardContent>
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                                <p className={`text-sm mt-1 ${stat.color}`}>{stat.change}</p>
+                                <p className="text-sm font-medium text-gray-600">
+                                  {stat.label}
+                                </p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">
+                                  {stat.value}
+                                </p>
+                                <p className={`text-sm mt-1 ${stat.color}`}>
+                                  {stat.change}
+                                </p>
                               </div>
-                              <div className={`w-12 h-12 rounded-full ${stat.color.replace('text-', 'bg-').replace('600', '100')} flex items-center justify-center`}>
-                                <FiTrendingUp className={`w-6 h-6 ${stat.color}`} />
+                              <div
+                                className={`w-12 h-12 rounded-full ${stat.color.replace("text-", "bg-").replace("600", "100")} flex items-center justify-center`}
+                              >
+                                <FiTrendingUp
+                                  className={`w-6 h-6 ${stat.color}`}
+                                />
                               </div>
                             </div>
                           </CardContent>
@@ -209,30 +263,38 @@ export function DashboardLayout() {
                         <CardTitle>Quick Actions</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <Button 
-                            size="lg" 
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <Button
+                            size="lg"
                             className="h-20 flex-col"
-                            onClick={() => setActiveTab('upload')}
+                            onClick={() => setActiveTab("upload")}
                             leftIcon={<FiPlus />}
                           >
                             Upload New Resume
                           </Button>
-                          <Button 
-                            variant="secondary" 
-                            size="lg" 
+                          <Button
+                            variant="secondary"
+                            size="lg"
                             className="h-20 flex-col"
-                            onClick={() => setActiveTab('jobs')}
+                            onClick={() => setActiveTab("matching")}
                           >
-                            Add Job Application
+                            Match Job Description
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="lg" 
+                          <Button
+                            variant="outline"
+                            size="lg"
                             className="h-20 flex-col"
-                            onClick={() => setActiveTab('analysis')}
+                            onClick={() => setActiveTab("analytics")}
                           >
                             View Analytics
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            className="h-20 flex-col"
+                            onClick={() => setActiveTab("jobs")}
+                          >
+                            Add Job Application
                           </Button>
                         </div>
                       </CardContent>
@@ -252,18 +314,49 @@ export function DashboardLayout() {
                       <CardContent>
                         <div className="space-y-4">
                           {[
-                            { action: 'Resume analyzed', target: 'Software_Engineer_Resume.pdf', time: '2 hours ago', status: 'success' },
-                            { action: 'Job application added', target: 'Frontend Developer at Google', time: '1 day ago', status: 'pending' },
-                            { action: 'ATS score improved', target: 'Marketing_Resume.pdf', time: '2 days ago', status: 'success' },
-                            { action: 'Interview scheduled', target: 'Senior Developer at Microsoft', time: '3 days ago', status: 'success' },
+                            {
+                              action: "Resume analyzed",
+                              target: "Software_Engineer_Resume.pdf",
+                              time: "2 hours ago",
+                              status: "success",
+                            },
+                            {
+                              action: "Job application added",
+                              target: "Frontend Developer at Google",
+                              time: "1 day ago",
+                              status: "pending",
+                            },
+                            {
+                              action: "ATS score improved",
+                              target: "Marketing_Resume.pdf",
+                              time: "2 days ago",
+                              status: "success",
+                            },
+                            {
+                              action: "Interview scheduled",
+                              target: "Senior Developer at Microsoft",
+                              time: "3 days ago",
+                              status: "success",
+                            },
                           ].map((activity, index) => (
-                            <div key={index} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                              <div className={`w-2 h-2 rounded-full ${activity.status === 'success' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                            <div
+                              key={index}
+                              className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${activity.status === "success" ? "bg-green-500" : "bg-yellow-500"}`}
+                              />
                               <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                                <p className="text-sm text-gray-600">{activity.target}</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {activity.action}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {activity.target}
+                                </p>
                               </div>
-                              <span className="text-xs text-gray-500">{activity.time}</span>
+                              <span className="text-xs text-gray-500">
+                                {activity.time}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -273,7 +366,7 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {activeTab === 'upload' && (
+              {activeTab === "upload" && (
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -283,14 +376,15 @@ export function DashboardLayout() {
                     <CardHeader>
                       <CardTitle>Upload Your Resume</CardTitle>
                       <p className="text-gray-600">
-                        Upload your resume for AI-powered analysis and optimization suggestions
+                        Upload your resume for AI-powered analysis and
+                        optimization suggestions
                       </p>
                     </CardHeader>
                     <CardContent>
                       <AdvancedFileUpload
                         maxFiles={3}
                         onFilesUploaded={(files) => {
-                          console.log('Files uploaded:', files);
+                          console.log("Files uploaded:", files);
                         }}
                       />
                     </CardContent>
@@ -298,7 +392,7 @@ export function DashboardLayout() {
                 </motion.div>
               )}
 
-              {activeTab === 'analysis' && (
+              {activeTab === "analysis" && (
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -308,30 +402,33 @@ export function DashboardLayout() {
                 </motion.div>
               )}
 
-              {activeTab === 'jobs' && (
+              {activeTab === "matching" && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <JobDescriptionMatching />
+                </motion.div>
+              )}
+
+              {activeTab === "analytics" && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <AnalyticsInsights />
+                </motion.div>
+              )}
+
+              {activeTab === "jobs" && (
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
                   <JobTrackerSection />
-                </motion.div>
-              )}
-
-              {activeTab === 'settings' && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Account Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Settings panel coming soon...</p>
-                    </CardContent>
-                  </Card>
                 </motion.div>
               )}
             </div>

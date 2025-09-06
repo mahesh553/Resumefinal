@@ -7,11 +7,18 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { ResumeVersion } from './resume-version.entity';
 
 @Entity('resumes')
+@Index(['userId']) // For user resume queries
+@Index(['userId', 'uploadedAt']) // For user resume history
+@Index(['atsScore']) // For filtering by ATS score
+@Index(['isProcessed']) // For processing queue queries
+@Index(['fileType']) // For filtering by file type
+@Index(['uploadedAt']) // For chronological sorting
 export class Resume {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -49,7 +56,7 @@ export class Resume {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.resumes)
+  @ManyToOne(() => User, (user) => user.resumes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 

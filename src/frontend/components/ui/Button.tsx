@@ -1,78 +1,89 @@
-'use client';
+"use client";
 
-import { forwardRef } from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { forwardRef } from "react";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg" | "xl";
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ 
-    className, 
-    variant = 'primary', 
-    size = 'md', 
-    loading = false,
-    leftIcon,
-    rightIcon,
-    children, 
-    disabled,
-    ...props 
-  }, ref) => {
+  (
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      loading = false,
+      leftIcon,
+      rightIcon,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const baseClasses = [
-      'inline-flex items-center justify-center font-medium rounded-xl',
-      'transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      'active:scale-95',
+      "inline-flex items-center justify-center font-medium rounded-xl",
+      "transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2",
+      "disabled:opacity-50 disabled:cursor-not-allowed",
+      "active:scale-95",
     ];
 
     const variants = {
       primary: [
-        'bg-gradient-to-r from-primary-500 to-blue-600 text-white',
-        'shadow-soft hover:shadow-medium hover:-translate-y-0.5',
-        'focus:ring-primary-500',
+        "bg-gradient-to-r from-primary-500 to-blue-600 text-white",
+        "shadow-soft hover:shadow-medium hover:-translate-y-0.5",
+        "focus:ring-primary-500",
       ],
       secondary: [
-        'bg-white text-gray-700 border border-gray-200',
-        'shadow-soft hover:shadow-medium hover:bg-gray-50 hover:-translate-y-0.5',
-        'focus:ring-gray-500',
+        "bg-white text-gray-700 border border-gray-200",
+        "shadow-soft hover:shadow-medium hover:bg-gray-50 hover:-translate-y-0.5",
+        "focus:ring-gray-500",
       ],
       outline: [
-        'border-2 border-primary-500 text-primary-600 bg-transparent',
-        'hover:bg-primary-50',
-        'focus:ring-primary-500',
+        "border-2 border-primary-500 text-primary-600 bg-transparent",
+        "hover:bg-primary-50",
+        "focus:ring-primary-500",
       ],
       ghost: [
-        'text-gray-600 bg-transparent hover:bg-gray-100',
-        'focus:ring-gray-500',
+        "text-gray-600 bg-transparent hover:bg-gray-100",
+        "focus:ring-gray-500",
       ],
     };
 
     const sizes = {
-      sm: 'px-3 py-2 text-sm',
-      md: 'px-4 py-2.5 text-sm',
-      lg: 'px-6 py-3 text-base',
-      xl: 'px-8 py-4 text-lg',
+      sm: "px-3 py-2 text-sm",
+      md: "px-4 py-2.5 text-sm",
+      lg: "px-6 py-3 text-base",
+      xl: "px-8 py-4 text-lg",
     };
+
+    const {
+      className: propsClassName,
+      onAnimationStart,
+      onAnimationEnd,
+      onAnimationIteration,
+      onTransitionEnd,
+      onDrag,
+      onDragStart,
+      onDragEnd,
+      ...buttonProps
+    } = props as React.ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
       <motion.button
         ref={ref}
-        className={cn(
-          baseClasses,
-          variants[variant],
-          sizes[size],
-          className
-        )}
+        className={cn(baseClasses, variants[variant], sizes[size], className)}
         disabled={disabled || loading}
         whileHover={disabled ? {} : { scale: 1.02 }}
         whileTap={disabled ? {} : { scale: 0.98 }}
-        {...(props as any)}
+        {...buttonProps}
       >
         {loading && (
           <svg
@@ -104,6 +115,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";
 
 export { Button };

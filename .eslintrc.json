@@ -6,9 +6,7 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint/eslint-plugin"],
-  "extends": [
-    "eslint:recommended"
-  ],
+  "extends": ["eslint:recommended"],
   "root": true,
   "env": {
     "node": true,
@@ -16,10 +14,9 @@
     "es6": true
   },
   "ignorePatterns": [
-    ".eslintrc.js", 
-    "dist/", 
-    "node_modules/", 
-    "src/frontend/",
+    ".eslintrc.js",
+    "dist/",
+    "node_modules/",
     "*.config.js",
     "next.config.js",
     "tailwind.config.js",
@@ -27,7 +24,21 @@
   ],
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx"],
+      "files": ["src/frontend/**/*.ts", "src/frontend/**/*.tsx"],
+      "extends": ["next/core-web-vitals"],
+      "parserOptions": {
+        "project": "./src/frontend/tsconfig.json"
+      },
+      "env": {
+        "browser": true,
+        "es2020": true
+      }
+    },
+    {
+      "files": ["src/backend/**/*.ts", "src/backend/**/*.js"],
+      "rules": {
+        "@next/next/no-assign-module-variable": "off"
+      },
       "parserOptions": {
         "project": "./tsconfig.json"
       }
@@ -44,11 +55,14 @@
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": ["error", { 
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true
-    }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
     "no-unused-vars": "off",
     "no-undef": "off"
   }

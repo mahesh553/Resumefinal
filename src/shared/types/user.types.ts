@@ -6,6 +6,11 @@ export interface User {
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
+  subscription?: {
+    plan: string;
+    status: string;
+    currentPeriodEnd?: Date;
+  };
 }
 
 export enum UserRole {

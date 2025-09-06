@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Resume } from './resume.entity';
 import { JobApplication } from './job-application.entity';
@@ -16,6 +17,11 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Index(['email']) // For login queries
+@Index(['stripeCustomerId']) // For Stripe webhook processing
+@Index(['role']) // For admin queries
+@Index(['isActive']) // For filtering active users
+@Index(['createdAt']) // For user registration analytics
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

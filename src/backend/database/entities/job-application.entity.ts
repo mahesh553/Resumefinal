@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -20,6 +21,13 @@ export enum JobStatus {
 }
 
 @Entity('job_applications')
+@Index(['userId']) // For user job application queries
+@Index(['userId', 'appliedDate']) // For user application timeline
+@Index(['status']) // For filtering by status
+@Index(['appliedDate']) // For chronological sorting
+@Index(['followUpDate']) // For follow-up reminders
+@Index(['interviewDate']) // For interview scheduling
+@Index(['vendorName']) // For company-based queries
 export class JobApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -76,7 +84,7 @@ export class JobApplication {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.jobApplications)
+  @ManyToOne(() => User, (user) => user.jobApplications, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 }

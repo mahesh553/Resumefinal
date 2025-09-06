@@ -3,9 +3,17 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('jd_matching_results')
+@Index(['userId']) // For user matching queries
+@Index(['overallScore']) // For filtering by match score
+@Index(['createdAt']) // For chronological sorting
+@Index(['userId', 'createdAt']) // For user matching history
 export class JdMatching {
   @PrimaryColumn('uuid')
   id: string;
@@ -42,4 +50,8 @@ export class JdMatching {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

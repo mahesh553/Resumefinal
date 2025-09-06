@@ -5,10 +5,15 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Resume } from './resume.entity';
 
 @Entity('resume_versions')
+@Index(['resumeId']) // For resume version queries
+@Index(['resumeId', 'versionNumber']) // For specific version lookup
+@Index(['resumeId', 'createdAt']) // For version history
+@Index(['atsScore']) // For filtering by ATS score
 export class ResumeVersion {
   @PrimaryGeneratedColumn('uuid')
   id: string;

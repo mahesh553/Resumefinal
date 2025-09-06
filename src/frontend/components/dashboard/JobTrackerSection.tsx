@@ -1,89 +1,175 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { Button } from "@/components/ui/Button";
+import { JobStatusBadge } from "@/components/ui/JobStatusBadge";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { apiClient } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import type { Job as _Job } from "@/types";
 import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
   BriefcaseIcon,
-  MapPinIcon,
   CalendarIcon,
+  ExclamationTriangleIcon,
   EyeIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
   PencilIcon,
+  PlusIcon,
   TrashIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { JobStatusBadge } from '@/components/ui/JobStatusBadge';
-import { formatDate, getStatusColor } from '@/lib/utils';
-import type { Job } from '@/types';
-
-const mockJobs: Job[] = [
-  {
-    id: '1',
-    userId: '1',
-    title: 'Senior Frontend Developer',
-    company: 'TechCorp Inc.',
-    description: 'Looking for an experienced frontend developer...',
-    requirements: ['React', 'TypeScript', 'Next.js'],
-    location: 'San Francisco, CA',
-    type: 'full-time',
-    status: 'interview',
-    applicationDate: '2024-01-15',
-    notes: 'Phone interview scheduled for next week',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-20T14:30:00Z',
-  },
-  {
-    id: '2',
-    userId: '1',
-    title: 'Full Stack Engineer',
-    company: 'StartupXYZ',
-    description: 'Join our growing team...',
-    requirements: ['Node.js', 'React', 'PostgreSQL'],
-    location: 'Remote',
-    type: 'full-time',
-    status: 'applied',
-    applicationDate: '2024-01-20',
-    createdAt: '2024-01-20T09:00:00Z',
-    updatedAt: '2024-01-20T09:00:00Z',
-  },
-  {
-    id: '3',
-    userId: '1',
-    title: 'React Developer',
-    company: 'BigTech Solutions',
-    description: 'Exciting opportunity to work on...',
-    requirements: ['React', 'Redux', 'JavaScript'],
-    location: 'New York, NY',
-    type: 'contract',
-    status: 'offer',
-    applicationDate: '2024-01-10',
-    notes: 'Offer received - $120k',
-    createdAt: '2024-01-10T11:00:00Z',
-    updatedAt: '2024-01-25T16:00:00Z',
-  },
-];
-
-const statusFilters = [
-  { value: 'all', label: 'All Jobs', count: mockJobs.length },
-  { value: 'applied', label: 'Applied', count: mockJobs.filter(j => j.status === 'applied').length },
-  { value: 'interview', label: 'Interview', count: mockJobs.filter(j => j.status === 'interview').length },
-  { value: 'offer', label: 'Offer', count: mockJobs.filter(j => j.status === 'offer').length },
-  { value: 'rejected', label: 'Rejected', count: mockJobs.filter(j => j.status === 'rejected').length },
-];
+} from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 export function JobTrackerSection() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [jobs, setJobs] = useState(mockJobs);
-
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [jobs, setJobs] = useState<_Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
   });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await loadJobs();
+      await loadStats();
+    };
+    fetchData();
+  }, [statusFilter, pagination.page, searchTerm]);
+
+  const loadJobs = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const filters: Record<string, unknown> = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sortBy: "appliedDate",
+        sortOrder: "DESC" as const,
+      };
+
+      if (statusFilter !== "all") {
+        filters.status = statusFilter;
+      }
+
+      if (searchTerm.trim()) {
+        filters.vendorName = searchTerm.trim();
+      }
+
+      const result = await apiClient.getJobs(filters);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      setJobs(result.data?.data || []);
+      setPagination((prev) => ({
+        ...prev,
+        total: result.data?.pagination?.total || 0,
+        totalPages: result.data?.pagination?.totalPages || 0,
+      }));
+    } catch (err) {
+      console.error("Failed to load jobs:", err);
+      setError("Failed to load jobs");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const result = await apiClient.getJobStats();
+      if (result.data?.statusCounts) {
+        setStatusCounts(result.data.statusCounts);
+      }
+    } catch (err) {
+      console.error("Failed to load job stats:", err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm("Are you sure you want to delete this job application?")) {
+      return;
+    }
+
+    try {
+      const result = await apiClient.deleteJob(jobId);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Job application deleted successfully");
+      loadJobs();
+      loadStats();
+    } catch (err) {
+      toast.error("Failed to delete job application");
+    }
+  };
+
+  const _handleStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      const result = await apiClient.updateJobStatus(jobId, newStatus);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Status updated successfully");
+      loadJobs();
+      loadStats();
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const statusFilters = [
+    { value: "all", label: "All Jobs", count: pagination.total },
+    {
+      value: "applied",
+      label: "Applied",
+      count: statusCounts.applied || 0,
+    },
+    {
+      value: "interview_scheduled",
+      label: "Interview",
+      count: statusCounts.interview_scheduled || 0,
+    },
+    {
+      value: "offer_received",
+      label: "Offer",
+      count: statusCounts.offer_received || 0,
+    },
+    {
+      value: "rejected",
+      label: "Rejected",
+      count: statusCounts.rejected || 0,
+    },
+  ];
+
+  if (error) {
+    return (
+      <div className="card text-center py-12">
+        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-2xl flex items-center justify-center">
+          <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Failed to Load Jobs
+        </h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadJobs}>Try Again</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -96,7 +182,7 @@ export function JobTrackerSection() {
             Track your job applications and manage your job search progress.
           </p>
         </div>
-        
+
         <Button className="button-primary mt-4 md:mt-0">
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Job
@@ -142,8 +228,8 @@ export function JobTrackerSection() {
             onClick={() => setStatusFilter(filter.value)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
               statusFilter === filter.value
-                ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? "bg-primary-100 text-primary-700 border border-primary-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -155,112 +241,143 @@ export function JobTrackerSection() {
       </div>
 
       {/* Jobs List */}
-      <div className="space-y-4">
-        {filteredJobs.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
-              <BriefcaseIcon className="w-8 h-8 text-gray-400" />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+          <span className="ml-3 text-gray-600">Loading jobs...</span>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <BriefcaseIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Jobs Found
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm
+                  ? "Try adjusting your search terms."
+                  : "Start tracking your job applications."}
+              </p>
+              <Button className="button-primary">
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Add Your First Job
+              </Button>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Jobs Found
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm ? 'Try adjusting your search terms.' : 'Start tracking your job applications.'}
-            </p>
-            <Button className="button-primary">
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Your First Job
-            </Button>
-          </div>
-        ) : (
-          filteredJobs.map((job, index) => (
-            <motion.div
-              key={job.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-medium transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {job.title}
-                      </h3>
-                      <p className="text-primary-600 font-medium">
-                        {job.company}
+          ) : (
+            jobs.map((job, index) => (
+              <motion.div
+                key={job.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-medium transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {job.jobTitle}
+                        </h3>
+                        <p className="text-primary-600 font-medium">
+                          {job.vendorName}
+                        </p>
+                      </div>
+                      <JobStatusBadge status={job.status} />
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
+                      {job.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPinIcon className="w-4 h-4" />
+                          {job.location}
+                        </div>
+                      )}
+                      {job.salaryRange && (
+                        <div className="flex items-center gap-1">
+                          <BriefcaseIcon className="w-4 h-4" />
+                          {job.salaryRange}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        Applied {formatDate(job.appliedDate)}
+                      </div>
+                    </div>
+
+                    {job.notes && (
+                      <p className="text-sm text-gray-600 italic mb-4">
+                        "{job.notes}"
                       </p>
-                    </div>
-                    <JobStatusBadge status={job.status} />
-                  </div>
+                    )}
 
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center gap-1">
-                      <MapPinIcon className="w-4 h-4" />
-                      {job.location}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <BriefcaseIcon className="w-4 h-4" />
-                      {job.type}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      Applied {formatDate(job.applicationDate)}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {job.requirements.slice(0, 3).map((req) => (
-                      <span
-                        key={req}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
-                      >
-                        {req}
-                      </span>
-                    ))}
-                    {job.requirements.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                        +{job.requirements.length - 3} more
-                      </span>
+                    {(job.followUpDate || job.interviewDate) && (
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        {job.followUpDate && (
+                          <div className="text-orange-600">
+                            Follow up: {formatDate(job.followUpDate)}
+                          </div>
+                        )}
+                        {job.interviewDate && (
+                          <div className="text-green-600">
+                            Interview: {formatDate(job.interviewDate)}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  {job.notes && (
-                    <p className="text-sm text-gray-600 italic">
-                      "{job.notes}"
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm">
+                      <EyeIcon className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <PencilIcon className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-error-600 hover:text-error-700"
+                      onClick={() => handleDeleteJob(job.id)}
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
 
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <EyeIcon className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <PencilIcon className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-error-600 hover:text-error-700">
-                    <TrashIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      {/* Pagination would go here */}
-      {filteredJobs.length > 0 && (
+      {/* Pagination */}
+      {jobs.length > 0 && pagination.totalPages > 1 && (
         <div className="flex justify-center mt-8">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page <= 1}
+              onClick={() =>
+                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
+              }
+            >
               Previous
             </Button>
             <span className="px-3 py-2 text-sm text-gray-600">
-              Page 1 of 1
+              Page {pagination.page} of {pagination.totalPages}
             </span>
-            <Button variant="outline" size="sm" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() =>
+                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
+              }
+            >
               Next
             </Button>
           </div>
