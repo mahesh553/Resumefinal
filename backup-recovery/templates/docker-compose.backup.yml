@@ -1,0 +1,293 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # BACKUP ORCHESTRATOR SERVICE
+  # =========================================================================
+  backup-orchestrator:
+    image: postgres:15-alpine
+    container_name: qoder-backup-orchestrator
+    environment:
+      - BACKUP_ENABLED=true
+      - POSTGRES_DB=${DATABASE_NAME:-qoder_resume}
+      - POSTGRES_USER=${DATABASE_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_HOST=${DATABASE_HOST:-postgres}
+      - POSTGRES_PORT=${DATABASE_PORT:-5432}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - CLOUD_BUCKET=${CLOUD_BUCKET:-qoder-resume-backups}
+      - ENCRYPTION_ENABLED=${ENCRYPTION_ENABLED:-true}
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-true}
+      - ALERT_EMAIL=${ALERT_EMAIL}
+      - ALERT_SLACK_WEBHOOK=${ALERT_SLACK_WEBHOOK}
+    volumes:
+      - ./backup-recovery:/backup-recovery:ro
+      - backup_storage:/var/backups/qoder-resume
+      - backup_logs:/var/log/qoder-backup
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - qoder-backup-network
+    depends_on:
+      - postgres
+      - redis
+    command: |
+      sh -c "
+        # Install required packages
+        apk add --no-cache bash curl aws-cli gnupg dcron rsync bc findutils &&
+        
+        # Copy backup scripts
+        cp -r /backup-recovery/* /usr/local/bin/ &&
+        chmod +x /usr/local/bin/scripts/*.sh &&
+        
+        # Set up cron jobs
+        echo '# QoderResume Backup Schedule' > /etc/crontabs/root &&
+        echo '0 2 * * * /usr/local/bin/scripts/backup-database.sh' >> /etc/crontabs/root &&
+        echo '0 3 * * * /usr/local/bin/scripts/backup-files.sh' >> /etc/crontabs/root &&
+        echo '0 */2 * * * /usr/local/bin/scripts/backup-redis.sh' >> /etc/crontabs/root &&
+        echo '0 4 * * * /usr/local/bin/scripts/cleanup-old-backups.sh' >> /etc/crontabs/root &&
+        echo '0 5 * * 0 /usr/local/bin/scripts/test-backup.sh' >> /etc/crontabs/root &&
+        
+        # Start cron daemon
+        crond -f -l 2
+      "
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # BACKUP STORAGE SERVICE (MinIO S3-compatible)
+  # =========================================================================
+  backup-storage:
+    image: minio/minio:latest
+    container_name: qoder-backup-minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-backup_admin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-backup_admin_password}
+      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9001}
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+      - minio_config:/root/.minio
+    networks:
+      - qoder-backup-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # =========================================================================
+  # BACKUP MONITORING SERVICE
+  # =========================================================================
+  backup-monitoring:
+    image: prom/prometheus:latest
+    container_name: qoder-backup-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./backup-recovery/configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - qoder-backup-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  # =========================================================================
+  # BACKUP ALERTING SERVICE
+  # =========================================================================
+  backup-alertmanager:
+    image: prom/alertmanager:latest
+    container_name: qoder-backup-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./backup-recovery/configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - qoder-backup-network
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+
+  # =========================================================================
+  # BACKUP DASHBOARD SERVICE
+  # =========================================================================
+  backup-dashboard:
+    image: grafana/grafana:latest
+    container_name: qoder-backup-grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-backup_dashboard}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./backup-recovery/configs/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./backup-recovery/configs/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - qoder-backup-network
+    depends_on:
+      - backup-monitoring
+    restart: unless-stopped
+
+  # =========================================================================
+  # POSTGRES DATABASE (Main)
+  # =========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: qoder-postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-qoder_resume}
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backups:/var/lib/postgresql/backups
+      - ./backup-recovery/configs/postgres.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - qoder-backup-network
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # REDIS CACHE (Main)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: qoder-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - redis_backups:/backups
+      - ./backup-recovery/configs/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - qoder-backup-network
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================================================
+  # BACKUP TESTING SERVICE
+  # =========================================================================
+  backup-tester:
+    image: postgres:15-alpine
+    container_name: qoder-backup-tester
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME:-qoder_resume}
+      - POSTGRES_USER=${DATABASE_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - TEST_DATABASE_NAME=qoder_resume_test
+      - MONITORING_ENABLED=true
+      - TEST_NOTIFICATION_EMAIL=${TEST_NOTIFICATION_EMAIL}
+    volumes:
+      - ./backup-recovery:/backup-recovery:ro
+      - backup_storage:/var/backups/qoder-resume
+      - backup_logs:/var/log/qoder-backup
+      - test_results:/var/lib/test-results
+    networks:
+      - qoder-backup-network
+    depends_on:
+      - postgres
+      - backup-orchestrator
+    command: |
+      sh -c "
+        # Install required packages
+        apk add --no-cache bash curl gnupg bc findutils &&
+        
+        # Copy backup scripts
+        cp -r /backup-recovery/* /usr/local/bin/ &&
+        chmod +x /usr/local/bin/scripts/*.sh &&
+        
+        # Wait for backup orchestrator to initialize
+        sleep 300 &&
+        
+        # Run weekly backup tests
+        while true; do
+          sleep 604800  # 1 week
+          /usr/local/bin/scripts/test-backup.sh -t all
+        done
+      "
+    restart: unless-stopped
+    profiles:
+      - testing
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  # Main application data
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  
+  # Backup storage
+  backup_storage:
+    driver: local
+  postgres_backups:
+    driver: local
+  redis_backups:
+    driver: local
+  backup_logs:
+    driver: local
+  
+  # MinIO storage
+  minio_data:
+    driver: local
+  minio_config:
+    driver: local
+  
+  # Monitoring data
+  prometheus_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  grafana_data:
+    driver: local
+  
+  # Test results
+  test_results:
+    driver: local
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  qoder-backup-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,242 @@
+# QoderResume Backup Schedule Configuration
+# Copy this to /etc/crontab or user crontab
+
+# Environment variables for backup scripts
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=ops@qoderresume.com
+
+# Backup Configuration Directory
+BACKUP_CONFIG_DIR=/opt/qoder-resume/backup-recovery
+
+# =============================================================================
+# CORE BACKUP SCHEDULE
+# =============================================================================
+
+# Database Full Backup - Daily at 2:00 AM
+0 2 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-database.sh
+
+# Database Incremental Backup - Every 6 hours
+0 */6 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-database.sh --type incremental
+
+# WAL Archive Backup - Every 15 minutes
+*/15 * * * * root /opt/qoder-resume/backup-recovery/scripts/backup-wal.sh
+
+# File Storage Backup - Daily at 3:00 AM
+0 3 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-files.sh
+
+# Redis Backup - Every 2 hours
+0 */2 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-redis.sh
+
+# Configuration Backup - Daily at 1:00 AM
+0 1 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-config.sh
+
+# =============================================================================
+# MAINTENANCE SCHEDULE
+# =============================================================================
+
+# Cleanup Old Backups - Daily at 4:00 AM
+0 4 * * * root /opt/qoder-resume/backup-recovery/scripts/cleanup-old-backups.sh
+
+# Backup Verification - Daily at 5:00 AM
+0 5 * * * root /opt/qoder-resume/backup-recovery/scripts/verify-backups.sh
+
+# Compress Old Backups - Weekly on Sunday at 6:00 AM
+0 6 * * 0 root /opt/qoder-resume/backup-recovery/scripts/compress-old-backups.sh
+
+# Database Maintenance - Weekly on Sunday at 1:00 AM
+0 1 * * 0 root /opt/qoder-resume/backup-recovery/scripts/database-maintenance.sh
+
+# =============================================================================
+# TESTING SCHEDULE
+# =============================================================================
+
+# Backup Testing - Weekly on Sunday at 5:00 AM
+0 5 * * 0 root /opt/qoder-resume/backup-recovery/scripts/test-backup.sh -t integrity,restoration
+
+# Full Disaster Recovery Test - Monthly on 1st Sunday at 7:00 AM
+0 7 1-7 * 0 root /opt/qoder-resume/backup-recovery/scripts/test-backup.sh -t all
+
+# Performance Testing - Daily at 6:00 AM (quick test)
+0 6 * * * root /opt/qoder-resume/backup-recovery/scripts/test-backup.sh -t performance
+
+# =============================================================================
+# MONITORING & REPORTING
+# =============================================================================
+
+# Health Check - Every 30 minutes
+*/30 * * * * root /opt/qoder-resume/backup-recovery/scripts/health-check.sh
+
+# Storage Usage Report - Daily at 8:00 AM
+0 8 * * * root /opt/qoder-resume/backup-recovery/scripts/storage-report.sh
+
+# Weekly Backup Report - Monday at 9:00 AM
+0 9 * * 1 root /opt/qoder-resume/backup-recovery/scripts/weekly-report.sh
+
+# Monthly Backup Analysis - 1st of month at 10:00 AM
+0 10 1 * * root /opt/qoder-resume/backup-recovery/scripts/monthly-analysis.sh
+
+# =============================================================================
+# CLOUD SYNC SCHEDULE
+# =============================================================================
+
+# Cloud Upload - Every 4 hours
+0 */4 * * * root /opt/qoder-resume/backup-recovery/scripts/cloud-sync.sh
+
+# Cross-Region Sync - Daily at 11:00 PM
+0 23 * * * root /opt/qoder-resume/backup-recovery/scripts/cross-region-sync.sh
+
+# Cloud Storage Cleanup - Weekly on Saturday at 2:00 AM
+0 2 * * 6 root /opt/qoder-resume/backup-recovery/scripts/cloud-cleanup.sh
+
+# =============================================================================
+# SECURITY TASKS
+# =============================================================================
+
+# Encryption Key Rotation - Monthly on 15th at 3:00 AM
+0 3 15 * * root /opt/qoder-resume/backup-recovery/scripts/rotate-encryption-keys.sh
+
+# Access Log Review - Daily at 7:00 AM
+0 7 * * * root /opt/qoder-resume/backup-recovery/scripts/review-access-logs.sh
+
+# Security Audit - Weekly on Friday at 10:00 PM
+0 22 * * 5 root /opt/qoder-resume/backup-recovery/scripts/security-audit.sh
+
+# =============================================================================
+# EMERGENCY PROCEDURES
+# =============================================================================
+
+# Backup System Health Check - Every 5 minutes
+*/5 * * * * root /opt/qoder-resume/backup-recovery/scripts/emergency-health-check.sh
+
+# Alert System Test - Daily at 12:00 PM
+0 12 * * * root /opt/qoder-resume/backup-recovery/scripts/test-alerts.sh
+
+# =============================================================================
+# DEVELOPMENT/STAGING SCHEDULES
+# =============================================================================
+
+# Development Environment Backup - Daily at 10:00 PM
+0 22 * * * root /opt/qoder-resume/backup-recovery/scripts/backup-dev.sh
+
+# Staging Environment Sync - Daily at 11:30 PM
+30 23 * * * root /opt/qoder-resume/backup-recovery/scripts/sync-staging.sh
+
+# =============================================================================
+# SEASONAL TASKS
+# =============================================================================
+
+# Quarterly Backup Review - 1st day of quarter at 6:00 AM
+0 6 1 1,4,7,10 * root /opt/qoder-resume/backup-recovery/scripts/quarterly-review.sh
+
+# Annual Backup Strategy Review - January 1st at 8:00 AM
+0 8 1 1 * root /opt/qoder-resume/backup-recovery/scripts/annual-review.sh
+
+# Year-end Archive - December 31st at 6:00 PM
+0 18 31 12 * root /opt/qoder-resume/backup-recovery/scripts/year-end-archive.sh
+
+# =============================================================================
+# CUSTOM ENVIRONMENT VARIABLES
+# =============================================================================
+
+# Production Environment
+ENVIRONMENT=production
+
+# Backup Configuration
+BACKUP_ENABLED=1
+MONITORING_ENABLED=1
+ENCRYPTION_ENABLED=1
+CLOUD_SYNC_ENABLED=1
+
+# Alert Configuration
+CRITICAL_ALERT_EMAIL=critical@qoderresume.com
+WARNING_ALERT_EMAIL=warnings@qoderresume.com
+INFO_ALERT_EMAIL=info@qoderresume.com
+
+# Backup Retention (days)
+DAILY_RETENTION=90
+WEEKLY_RETENTION=365
+MONTHLY_RETENTION=2555
+
+# Performance Thresholds (seconds)
+BACKUP_TIME_WARNING=3600
+BACKUP_TIME_CRITICAL=7200
+
+# Storage Thresholds (percentage)
+STORAGE_WARNING=80
+STORAGE_CRITICAL=90
+
+# Network Limits (KB/s)
+BACKUP_BANDWIDTH_LIMIT=50000
+CLOUD_UPLOAD_LIMIT=25000
+
+# =============================================================================
+# TROUBLESHOOTING COMMANDS
+# =============================================================================
+
+# Check cron service status:
+# sudo systemctl status cron
+
+# View cron logs:
+# sudo journalctl -u cron -f
+
+# Test cron job manually:
+# sudo -u root /opt/qoder-resume/backup-recovery/scripts/backup-database.sh
+
+# List active cron jobs:
+# sudo crontab -l
+
+# Edit cron jobs:
+# sudo crontab -e
+
+# =============================================================================
+# NOTES
+# =============================================================================
+
+# 1. All backup scripts should be executable and have proper permissions
+# 2. Ensure backup directories exist and have correct ownership
+# 3. Test all scheduled jobs before deploying to production
+# 4. Monitor cron logs for any execution failures
+# 5. Update email addresses for notifications
+# 6. Adjust schedules based on business requirements
+# 7. Consider time zones when scheduling jobs
+# 8. Ensure sufficient disk space for backup operations
+# 9. Verify network connectivity for cloud operations
+# 10. Test alert mechanisms regularly
+
+# =============================================================================
+# INSTALLATION INSTRUCTIONS
+# =============================================================================
+
+# 1. Copy this file to the server:
+#    sudo cp crontab.template /etc/cron.d/qoder-backup
+
+# 2. Set proper permissions:
+#    sudo chmod 644 /etc/cron.d/qoder-backup
+#    sudo chown root:root /etc/cron.d/qoder-backup
+
+# 3. Restart cron service:
+#    sudo systemctl restart cron
+
+# 4. Verify installation:
+#    sudo systemctl status cron
+#    sudo crontab -l
+
+# =============================================================================
+# MONITORING COMMANDS
+# =============================================================================
+
+# View backup job execution:
+# tail -f /var/log/qoder-backup/*.log
+
+# Check backup storage usage:
+# du -sh /var/backups/qoder-resume/*
+
+# Monitor backup performance:
+# grep "duration" /var/log/qoder-backup/*.log | tail -20
+
+# Check failed backups:
+# grep "ERROR\|FAIL" /var/log/qoder-backup/*.log
+
+# View cloud sync status:
+# aws s3 ls s3://qoder-resume-backups/ --recursive | tail -10
