@@ -1,12 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { JwtAuthGuard } from "../modules/auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../modules/auth/guards/roles.guard";
-import { UserRole } from "../modules/auth/interfaces/auth.interfaces";
 import { AdminController } from "../modules/admin/controllers/admin.controller";
 import { AdminAnalyticsService } from "../modules/admin/services/admin-analytics.service";
 import { AdminSecurityService } from "../modules/admin/services/admin-security.service";
 import { SystemMonitoringService } from "../modules/admin/services/system-monitoring.service";
 import { UserManagementService } from "../modules/admin/services/user-management.service";
+import { JwtAuthGuard } from "../modules/auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../modules/auth/guards/roles.guard";
+import { UserRole } from "../modules/auth/interfaces/auth.interfaces";
 
 describe("AdminController", () => {
   let controller: AdminController;
@@ -161,9 +161,16 @@ describe("AdminController", () => {
       it("should return user activity data with default days", async () => {
         // Arrange
         const mockActivityData = [
-          { date: "2024-01-10", activeUsers: 25, newUsers: 5, totalLogins: 150 },
+          {
+            date: "2024-01-10",
+            activeUsers: 25,
+            newUsers: 5,
+            totalLogins: 150,
+          },
         ];
-        analyticsService.getUserActivityData.mockResolvedValue(mockActivityData);
+        analyticsService.getUserActivityData.mockResolvedValue(
+          mockActivityData
+        );
 
         // Act
         const result = await controller.getUserActivityData();
@@ -178,7 +185,9 @@ describe("AdminController", () => {
         const mockActivityData = [
           { date: "2024-01-10", activeUsers: 15, newUsers: 3, totalLogins: 90 },
         ];
-        analyticsService.getUserActivityData.mockResolvedValue(mockActivityData);
+        analyticsService.getUserActivityData.mockResolvedValue(
+          mockActivityData
+        );
 
         // Act
         const result = await controller.getUserActivityData(7);
@@ -193,7 +202,12 @@ describe("AdminController", () => {
       it("should return popular features", async () => {
         // Arrange
         const mockFeatures = [
-          { feature: "Resume Upload", usage: 150, users: 75, avgUsagePerUser: 2 },
+          {
+            feature: "Resume Upload",
+            usage: 150,
+            users: 75,
+            avgUsagePerUser: 2,
+          },
         ];
         analyticsService.getPopularFeatures.mockResolvedValue(mockFeatures);
 
@@ -291,7 +305,9 @@ describe("AdminController", () => {
 
         // Assert
         expect(result).toEqual(mockUser);
-        expect(userManagementService.getUserById).toHaveBeenCalledWith("user-1");
+        expect(userManagementService.getUserById).toHaveBeenCalledWith(
+          "user-1"
+        );
       });
     });
 
@@ -312,7 +328,9 @@ describe("AdminController", () => {
 
         // Assert
         expect(result).toEqual(mockUser);
-        expect(userManagementService.createUser).toHaveBeenCalledWith(createUserDto);
+        expect(userManagementService.createUser).toHaveBeenCalledWith(
+          createUserDto
+        );
       });
     });
 
@@ -352,14 +370,18 @@ describe("AdminController", () => {
       it("should promote user to admin", async () => {
         // Arrange
         const adminUser = { ...mockUser, role: UserRole.ADMIN };
-        userManagementService.promoteToAdmin.mockResolvedValue(adminUser as any);
+        userManagementService.promoteToAdmin.mockResolvedValue(
+          adminUser as any
+        );
 
         // Act
         const result = await controller.promoteToAdmin("user-1");
 
         // Assert
         expect(result).toEqual(adminUser);
-        expect(userManagementService.promoteToAdmin).toHaveBeenCalledWith("user-1");
+        expect(userManagementService.promoteToAdmin).toHaveBeenCalledWith(
+          "user-1"
+        );
       });
     });
   });
@@ -375,14 +397,18 @@ describe("AdminController", () => {
           redis: { status: "connected", responseTime: 2 },
           aiServices: { status: "available", responseTime: 150 },
         };
-        systemMonitoringService.getSystemHealth.mockResolvedValue(mockHealthStatus);
+        systemMonitoringService.getSystemHealth.mockResolvedValue(
+          mockHealthStatus
+        );
 
         // Act
         const result = await controller.getSystemHealth();
 
         // Assert
         expect(result).toEqual(mockHealthStatus);
-        expect(systemMonitoringService.getSystemHealth).toHaveBeenCalledTimes(1);
+        expect(systemMonitoringService.getSystemHealth).toHaveBeenCalledTimes(
+          1
+        );
       });
     });
 
@@ -394,7 +420,9 @@ describe("AdminController", () => {
           memory: { usage: 2048, total: 8192, percentage: 25 },
           responseTime: { average: 120, p95: 250, p99: 500 },
         };
-        systemMonitoringService.getPerformanceMetrics.mockResolvedValue(mockMetrics);
+        systemMonitoringService.getPerformanceMetrics.mockResolvedValue(
+          mockMetrics
+        );
 
         // Act
         const result = await controller.getPerformanceMetrics();
@@ -422,7 +450,9 @@ describe("AdminController", () => {
 
         // Assert
         expect(result).toEqual(mockErrors);
-        expect(systemMonitoringService.getRecentErrors).toHaveBeenCalledWith(10);
+        expect(systemMonitoringService.getRecentErrors).toHaveBeenCalledWith(
+          10
+        );
       });
 
       it("should return recent errors with custom limit", async () => {
@@ -573,14 +603,18 @@ describe("AdminController", () => {
           loginNotifications: true,
           suspiciousActivityAlerts: true,
         };
-        securityService.updateSecuritySettings.mockResolvedValue(updatedSettings);
+        securityService.updateSecuritySettings.mockResolvedValue(
+          updatedSettings
+        );
 
         // Act
         const result = await controller.updateSecuritySettings(updates);
 
         // Assert
         expect(result).toEqual({ data: updatedSettings });
-        expect(securityService.updateSecuritySettings).toHaveBeenCalledWith(updates);
+        expect(securityService.updateSecuritySettings).toHaveBeenCalledWith(
+          updates
+        );
       });
     });
 
@@ -594,7 +628,9 @@ describe("AdminController", () => {
 
         // Assert
         expect(result).toEqual({ message: "Session terminated successfully" });
-        expect(securityService.terminateSession).toHaveBeenCalledWith("session-1");
+        expect(securityService.terminateSession).toHaveBeenCalledWith(
+          "session-1"
+        );
       });
     });
 
@@ -607,7 +643,9 @@ describe("AdminController", () => {
         const result = await controller.runSecurityScan();
 
         // Assert
-        expect(result).toEqual({ message: "Security scan completed successfully" });
+        expect(result).toEqual({
+          message: "Security scan completed successfully",
+        });
         expect(securityService.runSecurityScan).toHaveBeenCalledTimes(1);
       });
     });
@@ -620,7 +658,9 @@ describe("AdminController", () => {
       analyticsService.getSystemMetrics.mockRejectedValue(serviceError);
 
       // Act & Assert
-      await expect(controller.getSystemMetrics()).rejects.toThrow("Service error occurred");
+      await expect(controller.getSystemMetrics()).rejects.toThrow(
+        "Service error occurred"
+      );
     });
 
     it("should handle async operation failures", async () => {
@@ -630,7 +670,9 @@ describe("AdminController", () => {
       );
 
       // Act & Assert
-      await expect(controller.runSecurityScan()).rejects.toThrow("Security scan failed");
+      await expect(controller.runSecurityScan()).rejects.toThrow(
+        "Security scan failed"
+      );
     });
   });
 

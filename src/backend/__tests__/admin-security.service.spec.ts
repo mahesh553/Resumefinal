@@ -4,9 +4,8 @@ import { Repository } from "typeorm";
 
 import { User, UserRole } from "../database/entities/user.entity";
 import {
-  AdminSecurityService,
-  SecurityEvent,
   ActiveSession,
+  AdminSecurityService,
   SecuritySettings,
 } from "../modules/admin/services/admin-security.service";
 
@@ -66,9 +65,9 @@ describe("AdminSecurityService", () => {
       // Assert
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
-      
+
       // Check that events have required properties
-      result.forEach(event => {
+      result.forEach((event) => {
         expect(event).toHaveProperty("id");
         expect(event).toHaveProperty("type");
         expect(event).toHaveProperty("user");
@@ -82,11 +81,13 @@ describe("AdminSecurityService", () => {
 
     it("should filter events by severity", async () => {
       // Act
-      const highSeverityEvents = await service.getSecurityEvents({ severity: "high" });
+      const highSeverityEvents = await service.getSecurityEvents({
+        severity: "high",
+      });
 
       // Assert
       expect(Array.isArray(highSeverityEvents)).toBe(true);
-      highSeverityEvents.forEach(event => {
+      highSeverityEvents.forEach((event) => {
         expect(event.severity).toBe("high");
       });
     });
@@ -97,7 +98,7 @@ describe("AdminSecurityService", () => {
 
       // Assert
       expect(Array.isArray(loginEvents)).toBe(true);
-      loginEvents.forEach(event => {
+      loginEvents.forEach((event) => {
         expect(event.type).toBe("login");
       });
     });
@@ -123,7 +124,7 @@ describe("AdminSecurityService", () => {
 
       // Assert
       expect(Array.isArray(filteredEvents)).toBe(true);
-      filteredEvents.forEach(event => {
+      filteredEvents.forEach((event) => {
         const eventDate = new Date(event.timestamp);
         expect(eventDate).toBeInstanceOf(Date);
         expect(eventDate.getTime()).toBeGreaterThanOrEqual(startDate.getTime());
@@ -153,8 +154,10 @@ describe("AdminSecurityService", () => {
       });
 
       // Act & Assert
-      await expect(service.getSecurityEvents()).rejects.toThrow("Internal service error");
-      
+      await expect(service.getSecurityEvents()).rejects.toThrow(
+        "Internal service error"
+      );
+
       // Restore original method
       service.getSecurityEvents = originalGetSecurityEvents;
     });
@@ -167,8 +170,8 @@ describe("AdminSecurityService", () => {
 
       // Assert
       expect(Array.isArray(result)).toBe(true);
-      
-      result.forEach(session => {
+
+      result.forEach((session) => {
         expect(session).toHaveProperty("id");
         expect(session).toHaveProperty("userId");
         expect(session).toHaveProperty("userEmail");
@@ -199,17 +202,19 @@ describe("AdminSecurityService", () => {
       const result = await service.getActiveSessions();
 
       // Assert
-      const expiredSessionInResults = result.find(s => s.id === "expired-session");
+      const expiredSessionInResults = result.find(
+        (s) => s.id === "expired-session"
+      );
       expect(expiredSessionInResults).toBeUndefined();
     });
 
     it("should handle empty sessions", async () => {
       // Arrange - Clean up any existing sessions
       service.cleanupExpiredSessions();
-      
+
       // Clear all sessions for this test
       const sessions = await service.getActiveSessions();
-      sessions.forEach(session => {
+      sessions.forEach((session) => {
         if (!session.isCurrentSession) {
           service.terminateSession(session.id).catch(() => {}); // Ignore errors for cleanup
         }
@@ -339,7 +344,10 @@ describe("AdminSecurityService", () => {
       expect(typeof result.failedLogins).toBe("number");
       expect(typeof result.activeSessions).toBe("number");
       expect(typeof result.securityIncidents).toBe("number");
-      expect(result.lastSecurityScan === null || result.lastSecurityScan instanceof Date).toBe(true);
+      expect(
+        result.lastSecurityScan === null ||
+          result.lastSecurityScan instanceof Date
+      ).toBe(true);
     });
 
     it("should calculate stats from security events", async () => {
@@ -385,7 +393,9 @@ describe("AdminSecurityService", () => {
       userRepository.count.mockRejectedValue(new Error("Database error"));
 
       // Act & Assert
-      await expect(service.getSecurityStats()).rejects.toThrow("Database error");
+      await expect(service.getSecurityStats()).rejects.toThrow(
+        "Database error"
+      );
     });
   });
 
@@ -410,14 +420,15 @@ describe("AdminSecurityService", () => {
 
       // Assert
       const sessions = await service.getActiveSessions();
-      const terminatedSession = sessions.find(s => s.id === "test-session");
+      const terminatedSession = sessions.find((s) => s.id === "test-session");
       expect(terminatedSession).toBeUndefined();
     });
 
     it("should throw error for non-existent session", async () => {
       // Act & Assert
-      await expect(service.terminateSession("non-existent-session"))
-        .rejects.toThrow("Session not found");
+      await expect(
+        service.terminateSession("non-existent-session")
+      ).rejects.toThrow("Session not found");
     });
 
     it("should log security event when session is terminated", async () => {
@@ -442,7 +453,7 @@ describe("AdminSecurityService", () => {
       // Assert
       const eventsAfter = await service.getSecurityEvents();
       expect(eventsAfter.length).toBe(eventsBefore.length + 1);
-      
+
       const logoutEvent = eventsAfter[0]; // Should be newest
       expect(logoutEvent.type).toBe("logout");
       expect(logoutEvent.description).toContain("terminated by admin");
@@ -475,7 +486,7 @@ describe("AdminSecurityService", () => {
       // Assert
       const eventsAfter = await service.getSecurityEvents();
       expect(eventsAfter.length).toBe(eventsBefore.length + 1);
-      
+
       const scanEvent = eventsAfter[0]; // Should be newest
       expect(scanEvent.type).toBe("api_access");
       expect(scanEvent.description).toContain("Security scan completed");
@@ -514,7 +525,7 @@ describe("AdminSecurityService", () => {
       // Assert
       const events = await service.getSecurityEvents({ limit: 1 });
       const loggedEvent = events[0];
-      
+
       expect(loggedEvent.id).toBeDefined();
       expect(loggedEvent.timestamp).toBeInstanceOf(Date);
       expect(loggedEvent.type).toBe("login");

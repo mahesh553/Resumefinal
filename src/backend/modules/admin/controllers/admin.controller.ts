@@ -448,7 +448,8 @@ export class AdminController {
   })
   @HttpCode(HttpStatus.OK)
   async updateSecuritySettings(@Body() updates: any) {
-    const updatedSettings = await this.securityService.updateSecuritySettings(updates);
+    const updatedSettings =
+      await this.securityService.updateSecuritySettings(updates);
     return { data: updatedSettings };
   }
 

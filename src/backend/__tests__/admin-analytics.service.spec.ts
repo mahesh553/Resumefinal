@@ -2,9 +2,9 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { User, UserRole } from "../database/entities/user.entity";
 import { JobApplication } from "../database/entities/job-application.entity";
-import { AdminAnalyticsService, SystemMetrics } from "../modules/admin/services/admin-analytics.service";
+import { User, UserRole } from "../database/entities/user.entity";
+import { AdminAnalyticsService } from "../modules/admin/services/admin-analytics.service";
 
 describe("AdminAnalyticsService", () => {
   let service: AdminAnalyticsService;
@@ -174,10 +174,14 @@ describe("AdminAnalyticsService", () => {
 
     it("should handle database errors gracefully", async () => {
       // Arrange
-      userRepository.count.mockRejectedValue(new Error("Database connection failed"));
+      userRepository.count.mockRejectedValue(
+        new Error("Database connection failed")
+      );
 
       // Act & Assert
-      await expect(service.getSystemMetrics()).rejects.toThrow("Database connection failed");
+      await expect(service.getSystemMetrics()).rejects.toThrow(
+        "Database connection failed"
+      );
     });
 
     it("should calculate growth rates correctly", async () => {
@@ -229,9 +233,24 @@ describe("AdminAnalyticsService", () => {
       };
 
       const mockActivityData = [
-        { date: "2024-01-10", activeUsers: "25", newUsers: "5", totalLogins: "150" },
-        { date: "2024-01-09", activeUsers: "22", newUsers: "3", totalLogins: "134" },
-        { date: "2024-01-08", activeUsers: "28", newUsers: "7", totalLogins: "168" },
+        {
+          date: "2024-01-10",
+          activeUsers: "25",
+          newUsers: "5",
+          totalLogins: "150",
+        },
+        {
+          date: "2024-01-09",
+          activeUsers: "22",
+          newUsers: "3",
+          totalLogins: "134",
+        },
+        {
+          date: "2024-01-08",
+          activeUsers: "28",
+          newUsers: "7",
+          totalLogins: "168",
+        },
       ];
 
       userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -505,7 +524,9 @@ describe("AdminAnalyticsService", () => {
       });
 
       // Act & Assert
-      await expect(service.getTopUsers()).rejects.toThrow("Database query failed");
+      await expect(service.getTopUsers()).rejects.toThrow(
+        "Database query failed"
+      );
     });
   });
 
@@ -516,7 +537,9 @@ describe("AdminAnalyticsService", () => {
       userRepository.count.mockRejectedValue(dbError);
 
       // Act & Assert
-      await expect(service.getSystemMetrics()).rejects.toThrow("Connection timeout");
+      await expect(service.getSystemMetrics()).rejects.toThrow(
+        "Connection timeout"
+      );
     });
 
     it("should handle null/undefined query results", async () => {

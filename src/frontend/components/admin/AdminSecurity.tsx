@@ -7,7 +7,6 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Modal, ModalHeader, ModalTitle } from "@/components/ui/Modal";
 import { useErrorReporting } from "@/lib/errorReporting";
 import {
-  ClockIcon,
   ComputerDesktopIcon,
   ExclamationTriangleIcon,
   EyeIcon,
@@ -19,12 +18,19 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // Types
 interface SecurityEvent {
   id: string;
-  type: "login" | "logout" | "failed_login" | "password_change" | "role_change" | "permission_change" | "api_access";
+  type:
+    | "login"
+    | "logout"
+    | "failed_login"
+    | "password_change"
+    | "role_change"
+    | "permission_change"
+    | "api_access";
   user: {
     id: string;
     email: string;
@@ -73,16 +79,23 @@ interface SecurityStats {
 
 export function AdminSecurity() {
   // State management
-  const [activeTab, setActiveTab] = useState<"overview" | "events" | "sessions" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "events" | "sessions" | "settings"
+  >("overview");
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
-  const [securitySettings, setSecuritySettings] = useState<SecuritySettings | null>(null);
-  const [securityStats, setSecurityStats] = useState<SecurityStats | null>(null);
+  const [securitySettings, setSecuritySettings] =
+    useState<SecuritySettings | null>(null);
+  const [securityStats, setSecurityStats] = useState<SecurityStats | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
-  const [showEventDetails, setShowEventDetails] = useState<SecurityEvent | null>(null);
-  const [showSessionDetails, setShowSessionDetails] = useState<ActiveSession | null>(null);
+  const [showEventDetails, setShowEventDetails] =
+    useState<SecurityEvent | null>(null);
+  const [showSessionDetails, setShowSessionDetails] =
+    useState<ActiveSession | null>(null);
 
   const { reportError } = useErrorReporting();
 
@@ -97,13 +110,15 @@ export function AdminSecurity() {
   const fetchSecurityData = async () => {
     try {
       setLoading(true);
-      
-      const [eventsRes, sessionsRes, settingsRes, statsRes] = await Promise.all([
-        fetch("/api/admin/security/events"),
-        fetch("/api/admin/security/sessions"),
-        fetch("/api/admin/security/settings"),
-        fetch("/api/admin/security/stats"),
-      ]);
+
+      const [eventsRes, sessionsRes, settingsRes, statsRes] = await Promise.all(
+        [
+          fetch("/api/admin/security/events"),
+          fetch("/api/admin/security/sessions"),
+          fetch("/api/admin/security/settings"),
+          fetch("/api/admin/security/stats"),
+        ]
+      );
 
       if (eventsRes.ok) {
         const eventsData = await eventsRes.json();
@@ -134,7 +149,9 @@ export function AdminSecurity() {
   };
 
   // Event handlers
-  const handleUpdateSettings = async (updatedSettings: Partial<SecuritySettings>) => {
+  const handleUpdateSettings = async (
+    updatedSettings: Partial<SecuritySettings>
+  ) => {
     try {
       const response = await fetch("/api/admin/security/settings", {
         method: "PATCH",
@@ -146,7 +163,9 @@ export function AdminSecurity() {
         throw new Error("Failed to update security settings");
       }
 
-      setSecuritySettings(prev => prev ? { ...prev, ...updatedSettings } : null);
+      setSecuritySettings((prev) =>
+        prev ? { ...prev, ...updatedSettings } : null
+      );
     } catch (error) {
       reportError(error as Error, {
         metadata: { component: "AdminSecurity", action: "updateSettings" },
@@ -156,16 +175,21 @@ export function AdminSecurity() {
 
   const handleTerminateSession = async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/admin/security/sessions/${sessionId}/terminate`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `/api/admin/security/sessions/${sessionId}/terminate`,
+        {
+          method: "POST",
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to terminate session");
       }
 
       // Remove from active sessions
-      setActiveSessions(prev => prev.filter(session => session.id !== sessionId));
+      setActiveSessions((prev) =>
+        prev.filter((session) => session.id !== sessionId)
+      );
     } catch (error) {
       reportError(error as Error, {
         metadata: { component: "AdminSecurity", action: "terminateSession" },
@@ -193,39 +217,44 @@ export function AdminSecurity() {
   };
 
   // Filtered events
-  const filteredEvents = securityEvents.filter(event => {
-    const matchesSearch = 
+  const filteredEvents = securityEvents.filter((event) => {
+    const matchesSearch =
       event.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.ipAddress.includes(searchQuery);
-    
-    const matchesSeverity = severityFilter === "all" || event.severity === severityFilter;
-    
+
+    const matchesSeverity =
+      severityFilter === "all" || event.severity === severityFilter;
+
     return matchesSearch && matchesSeverity;
   });
 
   // Security score calculation
   const calculateSecurityScore = useCallback(() => {
     if (!securityStats) return 0;
-    
+
     let score = 100;
-    
+
     // Deduct points for failed logins
-    const failureRate = securityStats.totalLogins > 0 ? 
-      (securityStats.failedLogins / securityStats.totalLogins) * 100 : 0;
+    const failureRate =
+      securityStats.totalLogins > 0
+        ? (securityStats.failedLogins / securityStats.totalLogins) * 100
+        : 0;
     score -= failureRate * 0.5;
-    
+
     // Deduct points for security incidents
     score -= securityStats.securityIncidents * 5;
-    
+
     // Deduct points if no recent security scan
     if (!securityStats.lastSecurityScan) {
       score -= 20;
     } else {
-      const daysSinceLastScan = (Date.now() - new Date(securityStats.lastSecurityScan).getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceLastScan =
+        (Date.now() - new Date(securityStats.lastSecurityScan).getTime()) /
+        (1000 * 60 * 60 * 24);
       if (daysSinceLastScan > 7) score -= 10;
     }
-    
+
     return Math.max(0, Math.min(100, score));
   }, [securityStats]);
 
@@ -286,11 +315,14 @@ export function AdminSecurity() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Security Center</h1>
           <p className="text-gray-600 mt-1">
-            Monitor security events, manage sessions, and configure security settings
+            Monitor security events, manage sessions, and configure security
+            settings
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <div className={`px-4 py-2 rounded-lg font-semibold ${getScoreColor(securityScore)}`}>
+          <div
+            className={`px-4 py-2 rounded-lg font-semibold ${getScoreColor(securityScore)}`}
+          >
             Security Score: {Math.round(securityScore)}%
           </div>
           <Button onClick={handleRunSecurityScan}>
@@ -307,8 +339,12 @@ export function AdminSecurity() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Logins</p>
-                  <p className="text-2xl font-bold text-gray-900">{securityStats.totalLogins}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Logins
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {securityStats.totalLogins}
+                  </p>
                 </div>
                 <UserIcon className="w-8 h-8 text-blue-600" />
               </div>
@@ -319,8 +355,12 @@ export function AdminSecurity() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Failed Logins</p>
-                  <p className="text-2xl font-bold text-red-900">{securityStats.failedLogins}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Failed Logins
+                  </p>
+                  <p className="text-2xl font-bold text-red-900">
+                    {securityStats.failedLogins}
+                  </p>
                 </div>
                 <LockClosedIcon className="w-8 h-8 text-red-600" />
               </div>
@@ -331,8 +371,12 @@ export function AdminSecurity() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Sessions</p>
-                  <p className="text-2xl font-bold text-green-900">{securityStats.activeSessions}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Active Sessions
+                  </p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {securityStats.activeSessions}
+                  </p>
                 </div>
                 <ComputerDesktopIcon className="w-8 h-8 text-green-600" />
               </div>
@@ -343,8 +387,12 @@ export function AdminSecurity() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Security Incidents</p>
-                  <p className="text-2xl font-bold text-orange-900">{securityStats.securityIncidents}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Security Incidents
+                  </p>
+                  <p className="text-2xl font-bold text-orange-900">
+                    {securityStats.securityIncidents}
+                  </p>
                 </div>
                 <ExclamationTriangleIcon className="w-8 h-8 text-orange-600" />
               </div>
@@ -358,8 +406,16 @@ export function AdminSecurity() {
         <nav className="-mb-px flex space-x-8">
           {[
             { id: "overview", label: "Overview", icon: ShieldCheckIcon },
-            { id: "events", label: "Security Events", icon: ExclamationTriangleIcon },
-            { id: "sessions", label: "Active Sessions", icon: ComputerDesktopIcon },
+            {
+              id: "events",
+              label: "Security Events",
+              icon: ExclamationTriangleIcon,
+            },
+            {
+              id: "sessions",
+              label: "Active Sessions",
+              icon: ComputerDesktopIcon,
+            },
             { id: "settings", label: "Settings", icon: KeyIcon },
           ].map((tab) => (
             <button
@@ -418,19 +474,27 @@ export function AdminSecurity() {
                     {getSeverityIcon(event.severity)}
                     {getEventTypeIcon(event.type)}
                     <div>
-                      <p className="font-medium text-gray-900">{event.description}</p>
+                      <p className="font-medium text-gray-900">
+                        {event.description}
+                      </p>
                       <p className="text-sm text-gray-600">
-                        {event.user.email} • {new Date(event.timestamp).toLocaleString()}
+                        {event.user.email} •{" "}
+                        {new Date(event.timestamp).toLocaleString()}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      event.severity === "critical" ? "bg-red-100 text-red-800" :
-                      event.severity === "high" ? "bg-orange-100 text-orange-800" :
-                      event.severity === "medium" ? "bg-yellow-100 text-yellow-800" :
-                      "bg-blue-100 text-blue-800"
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        event.severity === "critical"
+                          ? "bg-red-100 text-red-800"
+                          : event.severity === "high"
+                            ? "bg-orange-100 text-orange-800"
+                            : event.severity === "medium"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
                       {event.severity.toUpperCase()}
                     </span>
                     <Button
@@ -452,7 +516,7 @@ export function AdminSecurity() {
         <Card>
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-6">Active Sessions</h2>
-            
+
             <div className="space-y-3">
               {activeSessions.map((session) => (
                 <div
@@ -471,7 +535,8 @@ export function AdminSecurity() {
                         )}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {session.ipAddress} • Last activity: {new Date(session.lastActivity).toLocaleString()}
+                        {session.ipAddress} • Last activity:{" "}
+                        {new Date(session.lastActivity).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -505,7 +570,7 @@ export function AdminSecurity() {
         <Card>
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-6">Security Settings</h2>
-            
+
             <div className="space-y-6">
               {/* Authentication Settings */}
               <div>
@@ -518,9 +583,11 @@ export function AdminSecurity() {
                     <Input
                       type="number"
                       value={securitySettings.maxLoginAttempts}
-                      onChange={(e) => handleUpdateSettings({ 
-                        maxLoginAttempts: parseInt(e.target.value) 
-                      })}
+                      onChange={(e) =>
+                        handleUpdateSettings({
+                          maxLoginAttempts: parseInt(e.target.value),
+                        })
+                      }
                     />
                   </div>
                   <div>
@@ -530,9 +597,11 @@ export function AdminSecurity() {
                     <Input
                       type="number"
                       value={securitySettings.lockoutDuration / 60000} // Convert from ms to minutes
-                      onChange={(e) => handleUpdateSettings({ 
-                        lockoutDuration: parseInt(e.target.value) * 60000 
-                      })}
+                      onChange={(e) =>
+                        handleUpdateSettings({
+                          lockoutDuration: parseInt(e.target.value) * 60000,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -540,7 +609,9 @@ export function AdminSecurity() {
 
               {/* Password Requirements */}
               <div>
-                <h3 className="text-md font-medium mb-4">Password Requirements</h3>
+                <h3 className="text-md font-medium mb-4">
+                  Password Requirements
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -549,9 +620,11 @@ export function AdminSecurity() {
                     <Input
                       type="number"
                       value={securitySettings.passwordMinLength}
-                      onChange={(e) => handleUpdateSettings({ 
-                        passwordMinLength: parseInt(e.target.value) 
-                      })}
+                      onChange={(e) =>
+                        handleUpdateSettings({
+                          passwordMinLength: parseInt(e.target.value),
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-3">
@@ -559,9 +632,11 @@ export function AdminSecurity() {
                       <input
                         type="checkbox"
                         checked={securitySettings.passwordRequireSpecial}
-                        onChange={(e) => handleUpdateSettings({ 
-                          passwordRequireSpecial: e.target.checked 
-                        })}
+                        onChange={(e) =>
+                          handleUpdateSettings({
+                            passwordRequireSpecial: e.target.checked,
+                          })
+                        }
                         className="mr-2"
                       />
                       Require special characters
@@ -570,9 +645,11 @@ export function AdminSecurity() {
                       <input
                         type="checkbox"
                         checked={securitySettings.passwordRequireNumbers}
-                        onChange={(e) => handleUpdateSettings({ 
-                          passwordRequireNumbers: e.target.checked 
-                        })}
+                        onChange={(e) =>
+                          handleUpdateSettings({
+                            passwordRequireNumbers: e.target.checked,
+                          })
+                        }
                         className="mr-2"
                       />
                       Require numbers
@@ -581,9 +658,11 @@ export function AdminSecurity() {
                       <input
                         type="checkbox"
                         checked={securitySettings.passwordRequireUppercase}
-                        onChange={(e) => handleUpdateSettings({ 
-                          passwordRequireUppercase: e.target.checked 
-                        })}
+                        onChange={(e) =>
+                          handleUpdateSettings({
+                            passwordRequireUppercase: e.target.checked,
+                          })
+                        }
                         className="mr-2"
                       />
                       Require uppercase letters
@@ -594,15 +673,19 @@ export function AdminSecurity() {
 
               {/* Notifications */}
               <div>
-                <h3 className="text-md font-medium mb-4">Security Notifications</h3>
+                <h3 className="text-md font-medium mb-4">
+                  Security Notifications
+                </h3>
                 <div className="space-y-3">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
                       checked={securitySettings.loginNotifications}
-                      onChange={(e) => handleUpdateSettings({ 
-                        loginNotifications: e.target.checked 
-                      })}
+                      onChange={(e) =>
+                        handleUpdateSettings({
+                          loginNotifications: e.target.checked,
+                        })
+                      }
                       className="mr-2"
                     />
                     Email notifications for new logins
@@ -611,9 +694,11 @@ export function AdminSecurity() {
                     <input
                       type="checkbox"
                       checked={securitySettings.suspiciousActivityAlerts}
-                      onChange={(e) => handleUpdateSettings({ 
-                        suspiciousActivityAlerts: e.target.checked 
-                      })}
+                      onChange={(e) =>
+                        handleUpdateSettings({
+                          suspiciousActivityAlerts: e.target.checked,
+                        })
+                      }
                       className="mr-2"
                     />
                     Alerts for suspicious activity
@@ -633,32 +718,54 @@ export function AdminSecurity() {
           </ModalHeader>
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Event Type</label>
-              <p className="text-gray-900">{showEventDetails.type.replace('_', ' ').toUpperCase()}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Event Type
+              </label>
+              <p className="text-gray-900">
+                {showEventDetails.type.replace("_", " ").toUpperCase()}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">User</label>
-              <p className="text-gray-900">{showEventDetails.user.email} ({showEventDetails.user.role})</p>
+              <label className="block text-sm font-medium text-gray-700">
+                User
+              </label>
+              <p className="text-gray-900">
+                {showEventDetails.user.email} ({showEventDetails.user.role})
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Timestamp</label>
-              <p className="text-gray-900">{new Date(showEventDetails.timestamp).toLocaleString()}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Timestamp
+              </label>
+              <p className="text-gray-900">
+                {new Date(showEventDetails.timestamp).toLocaleString()}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">IP Address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                IP Address
+              </label>
               <p className="text-gray-900">{showEventDetails.ipAddress}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">User Agent</label>
-              <p className="text-gray-900 text-sm">{showEventDetails.userAgent}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                User Agent
+              </label>
+              <p className="text-gray-900 text-sm">
+                {showEventDetails.userAgent}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
               <p className="text-gray-900">{showEventDetails.description}</p>
             </div>
             {showEventDetails.details && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Additional Details</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Additional Details
+                </label>
                 <pre className="text-sm bg-gray-100 p-3 rounded mt-2">
                   {JSON.stringify(showEventDetails.details, null, 2)}
                 </pre>
@@ -676,28 +783,48 @@ export function AdminSecurity() {
           </ModalHeader>
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">User</label>
+              <label className="block text-sm font-medium text-gray-700">
+                User
+              </label>
               <p className="text-gray-900">{showSessionDetails.userEmail}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">IP Address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                IP Address
+              </label>
               <p className="text-gray-900">{showSessionDetails.ipAddress}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location</label>
-              <p className="text-gray-900">{showSessionDetails.location || "Unknown"}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              <p className="text-gray-900">
+                {showSessionDetails.location || "Unknown"}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Created</label>
-              <p className="text-gray-900">{new Date(showSessionDetails.createdAt).toLocaleString()}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Created
+              </label>
+              <p className="text-gray-900">
+                {new Date(showSessionDetails.createdAt).toLocaleString()}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Last Activity</label>
-              <p className="text-gray-900">{new Date(showSessionDetails.lastActivity).toLocaleString()}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Last Activity
+              </label>
+              <p className="text-gray-900">
+                {new Date(showSessionDetails.lastActivity).toLocaleString()}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">User Agent</label>
-              <p className="text-gray-900 text-sm">{showSessionDetails.userAgent}</p>
+              <label className="block text-sm font-medium text-gray-700">
+                User Agent
+              </label>
+              <p className="text-gray-900 text-sm">
+                {showSessionDetails.userAgent}
+              </p>
             </div>
           </div>
         </Modal>

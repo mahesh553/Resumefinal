@@ -1,14 +1,14 @@
 // Test setup for React Testing Library
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 // Mock next/router
-jest.mock('next/router', () => ({
+jest.mock("next/router", () => ({
   useRouter() {
     return {
-      route: '/admin',
-      pathname: '/admin',
+      route: "/admin",
+      pathname: "/admin",
       query: {},
-      asPath: '/admin',
+      asPath: "/admin",
       push: jest.fn(),
       replace: jest.fn(),
       reload: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('next/router', () => ({
 }));
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: jest.fn(),
@@ -27,7 +27,7 @@ jest.mock('next/navigation', () => ({
     };
   },
   usePathname() {
-    return '/admin';
+    return "/admin";
   },
   useSearchParams() {
     return new URLSearchParams();
@@ -35,7 +35,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock toast notifications
-jest.mock('@/components/ui/Toast', () => ({
+jest.mock("@/components/ui/Toast", () => ({
   toast: {
     success: jest.fn(),
     error: jest.fn(),
@@ -45,7 +45,7 @@ jest.mock('@/components/ui/Toast', () => ({
 }));
 
 // Mock API functions
-jest.mock('@/lib/api', () => ({
+jest.mock("@/lib/api", () => ({
   apiRequest: jest.fn(),
   adminApi: {
     getAnalytics: jest.fn(),
@@ -61,7 +61,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 // Mock React Query
-jest.mock('@tanstack/react-query', () => ({
+jest.mock("@tanstack/react-query", () => ({
   useQuery: jest.fn(),
   useMutation: jest.fn(),
   useQueryClient: jest.fn(() => ({
@@ -69,7 +69,8 @@ jest.mock('@tanstack/react-query', () => ({
     setQueryData: jest.fn(),
   })),
   QueryClient: jest.fn(),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
 }));
 
 // Global test utilities
@@ -79,7 +80,7 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }));
 
-global.matchMedia = jest.fn().mockImplementation(query => ({
+global.matchMedia = jest.fn().mockImplementation((query) => ({
   matches: false,
   media: query,
   onchange: null,
@@ -95,8 +96,8 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: any[]) => {
     if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
+      typeof args[0] === "string" &&
+      args[0].includes("Warning: ReactDOM.render is no longer supported")
     ) {
       return;
     }

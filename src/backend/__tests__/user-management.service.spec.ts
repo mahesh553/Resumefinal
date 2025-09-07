@@ -1,15 +1,15 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository, SelectQueryBuilder } from "typeorm";
 import * as bcrypt from "bcryptjs";
+import { Repository, SelectQueryBuilder } from "typeorm";
 
 import { User, UserRole } from "../database/entities/user.entity";
 import {
-  UserManagementService,
-  UserSearchFilters,
   CreateUserDto,
   UpdateUserDto,
+  UserManagementService,
+  UserSearchFilters,
 } from "../modules/admin/services/user-management.service";
 
 // Mock bcrypt
@@ -108,7 +108,10 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockUser], 1]);
 
       // Act
@@ -137,7 +140,10 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockUser], 1]);
 
       // Act
@@ -158,16 +164,22 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockAdmin], 1]);
 
       // Act
       await service.getUsers(filters);
 
       // Assert
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("user.role = :role", {
-        role: UserRole.ADMIN,
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        "user.role = :role",
+        {
+          role: UserRole.ADMIN,
+        }
+      );
     });
 
     it("should apply active status filter", async () => {
@@ -178,16 +190,22 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockUser], 1]);
 
       // Act
       await service.getUsers(filters);
 
       // Assert
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("user.isActive = :isActive", {
-        isActive: true,
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        "user.isActive = :isActive",
+        {
+          isActive: true,
+        }
+      );
     });
 
     it("should apply email verification filter", async () => {
@@ -198,14 +216,19 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockUser], 1]);
 
       // Act
       await service.getUsers(filters);
 
       // Assert
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("user.emailVerifiedAt IS NOT NULL");
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        "user.emailVerifiedAt IS NOT NULL"
+      );
     });
 
     it("should apply sorting", async () => {
@@ -217,14 +240,20 @@ describe("UserManagementService", () => {
         sortOrder: "ASC",
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockUser], 1]);
 
       // Act
       await service.getUsers(filters);
 
       // Assert
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith("user.email", "ASC");
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        "user.email",
+        "ASC"
+      );
     });
 
     it("should calculate pagination correctly", async () => {
@@ -234,7 +263,10 @@ describe("UserManagementService", () => {
         limit: 5,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 12]);
 
       // Act
@@ -257,8 +289,13 @@ describe("UserManagementService", () => {
         limit: 10,
       };
 
-      const mockQueryBuilder = userRepository.createQueryBuilder() as jest.Mocked<SelectQueryBuilder<User>>;
-      mockQueryBuilder.getManyAndCount.mockRejectedValue(new Error("Database error"));
+      const mockQueryBuilder =
+        userRepository.createQueryBuilder() as jest.Mocked<
+          SelectQueryBuilder<User>
+        >;
+      mockQueryBuilder.getManyAndCount.mockRejectedValue(
+        new Error("Database error")
+      );
 
       // Act & Assert
       await expect(service.getUsers(filters)).rejects.toThrow("Database error");
@@ -286,7 +323,9 @@ describe("UserManagementService", () => {
       userRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.getUserById("nonexistent")).rejects.toThrow(NotFoundException);
+      await expect(service.getUserById("nonexistent")).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -379,7 +418,9 @@ describe("UserManagementService", () => {
       mockBcrypt.hash.mockRejectedValue(new Error("Hashing failed") as never);
 
       // Act & Assert
-      await expect(service.createUser(createUserDto)).rejects.toThrow("Hashing failed");
+      await expect(service.createUser(createUserDto)).rejects.toThrow(
+        "Hashing failed"
+      );
     });
   });
 
@@ -391,7 +432,11 @@ describe("UserManagementService", () => {
         lastName: "Name",
       };
 
-      const updatedUser = { ...mockUser, firstName: "Updated", lastName: "Name" };
+      const updatedUser = {
+        ...mockUser,
+        firstName: "Updated",
+        lastName: "Name",
+      };
       userRepository.findOne.mockResolvedValue(mockUser);
       userRepository.save.mockResolvedValue(updatedUser);
 
@@ -416,9 +461,9 @@ describe("UserManagementService", () => {
       userRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.updateUser("nonexistent", updateUserDto)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        service.updateUser("nonexistent", updateUserDto)
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("should handle email uniqueness check when updating email", async () => {
@@ -448,7 +493,11 @@ describe("UserManagementService", () => {
         email: "existing@example.com",
       };
 
-      const anotherUser = { ...mockUser, id: "user-2", email: "existing@example.com" };
+      const anotherUser = {
+        ...mockUser,
+        id: "user-2",
+        email: "existing@example.com",
+      };
       userRepository.findOne
         .mockResolvedValueOnce(mockUser) // First call - find user to update
         .mockResolvedValueOnce(anotherUser); // Second call - email exists for another user
@@ -617,7 +666,10 @@ describe("UserManagementService", () => {
       // Arrange
       const unverifiedUser = { ...mockUser, emailVerifiedAt: null };
       userRepository.findOne.mockResolvedValue(unverifiedUser);
-      const verifiedUser = { ...unverifiedUser, emailVerifiedAt: expect.any(Date) };
+      const verifiedUser = {
+        ...unverifiedUser,
+        emailVerifiedAt: expect.any(Date),
+      };
       userRepository.save.mockResolvedValue(verifiedUser);
 
       // Act
@@ -637,7 +689,10 @@ describe("UserManagementService", () => {
       userRepository.save.mockResolvedValue(updatedUser);
 
       // Act
-      const result = await service.resetUserPassword("user-1", "newPassword123");
+      const result = await service.resetUserPassword(
+        "user-1",
+        "newPassword123"
+      );
 
       // Assert
       expect(mockBcrypt.hash).toHaveBeenCalledWith("newPassword123", 12);
@@ -716,9 +771,9 @@ describe("UserManagementService", () => {
       });
 
       // Act & Assert
-      await expect(
-        service.getUsers({ page: 1, limit: 10 })
-      ).rejects.toThrow("Database connection lost");
+      await expect(service.getUsers({ page: 1, limit: 10 })).rejects.toThrow(
+        "Database connection lost"
+      );
     });
 
     it("should handle transaction rollback scenarios", async () => {

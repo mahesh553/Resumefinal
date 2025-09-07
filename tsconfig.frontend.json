@@ -37,9 +37,5 @@
     "src/shared/**/*.ts",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/backend"
-  ]
+  "exclude": ["node_modules", "dist", "src/backend"]
 }

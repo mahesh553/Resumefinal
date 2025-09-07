@@ -10,7 +10,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   // Exclude backend files from Next.js processing
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
   experimental: {
     externalDir: true,
   },
@@ -26,11 +26,11 @@ const nextConfig = {
         child_process: false,
       };
     }
-    
+
     // Exclude backend files from webpack processing
     config.module.rules.push({
       test: /src[\/\\]backend/,
-      loader: 'ignore-loader',
+      loader: "ignore-loader",
     });
 
     return config;
