@@ -28,29 +28,44 @@ import { UserRole } from "../../auth/interfaces/auth.interfaces";
 import { AdminAnalyticsService } from "../services/admin-analytics.service";
 import { AdminSecurityService } from "../services/admin-security.service";
 import { SystemMonitoringService } from "../services/system-monitoring.service";
+import { PermissionService } from "../services/permission.service";
 import type {
   CreateUserDto,
   UpdateUserDto,
   UserSearchFilters,
 } from "../services/user-management.service";
 import { UserManagementService } from "../services/user-management.service";
+import {
+  CreatePermissionDto,
+  UpdatePermissionDto,
+  CreateRoleDto,
+  UpdateRoleDto,
+  AssignRoleDto,
+  UpdateRolePermissionsDto,
+  CheckPermissionDto,
+  BulkPermissionOperationDto,
+} from "../dto/permission.dto";
+import { Permissions } from "../../../common/decorators/permissions.decorator";
+import { PermissionsGuard } from "../../../common/guards/permissions.guard";
 
 @ApiTags("Admin")
 @Controller("admin")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions.AccessAdminPanel()
 @ApiBearerAuth()
 export class AdminController {
   constructor(
     private readonly analyticsService: AdminAnalyticsService,
     private readonly userManagementService: UserManagementService,
     private readonly systemMonitoringService: SystemMonitoringService,
-    private readonly securityService: AdminSecurityService
+    private readonly securityService: AdminSecurityService,
+    private readonly permissionService: PermissionService
   ) {}
 
   // ===== ANALYTICS ENDPOINTS =====
 
   @Get("analytics/metrics")
+  @Permissions.ViewAnalytics()
   @ApiOperation({ summary: "Get system metrics and statistics" })
   @ApiResponse({
     status: 200,
@@ -61,6 +76,7 @@ export class AdminController {
   }
 
   @Get("analytics/user-activity")
+  @Permissions.ViewAnalytics()
   @ApiOperation({ summary: "Get user activity data over time" })
   @ApiQuery({
     name: "days",
@@ -78,6 +94,7 @@ export class AdminController {
   }
 
   @Get("analytics/popular-features")
+  @Permissions.ViewAnalytics()
   @ApiOperation({ summary: "Get popular features usage statistics" })
   @ApiResponse({
     status: 200,
@@ -88,6 +105,7 @@ export class AdminController {
   }
 
   @Get("analytics/top-users")
+  @Permissions.ViewAnalytics()
   @ApiOperation({ summary: "Get top users by activity" })
   @ApiQuery({
     name: "limit",
@@ -104,6 +122,7 @@ export class AdminController {
   // ===== USER MANAGEMENT ENDPOINTS =====
 
   @Get("users")
+  @Permissions.ViewUsers()
   @ApiOperation({ summary: "Get users with filtering and pagination" })
   @ApiQuery({
     name: "search",
@@ -157,6 +176,7 @@ export class AdminController {
   }
 
   @Get("users/:id")
+  @Permissions.ViewUsers()
   @ApiOperation({ summary: "Get user by ID" })
   @ApiParam({ name: "id", description: "User UUID" })
   @ApiResponse({ status: 200, description: "User retrieved successfully" })
@@ -201,6 +221,7 @@ export class AdminController {
   }
 
   @Post("users")
+  @Permissions.CreateUser()
   @ApiOperation({ summary: "Create new user" })
   @ApiResponse({ status: 201, description: "User created successfully" })
   @ApiResponse({
@@ -212,6 +233,7 @@ export class AdminController {
   }
 
   @Put("users/:id")
+  @Permissions.UpdateUser()
   @ApiOperation({ summary: "Update user" })
   @ApiParam({ name: "id", description: "User UUID" })
   @ApiResponse({ status: 200, description: "User updated successfully" })
@@ -246,6 +268,7 @@ export class AdminController {
   }
 
   @Delete("users/:id")
+  @Permissions.DeleteUser()
   @ApiOperation({ summary: "Delete user account" })
   @ApiParam({ name: "id", description: "User UUID" })
   @ApiResponse({ status: 204, description: "User deleted successfully" })
@@ -467,6 +490,7 @@ export class AdminController {
   }
 
   @Post("security/scan")
+  @Permissions.ManageSecurityLogs()
   @ApiOperation({ summary: "Run security scan" })
   @ApiResponse({
     status: 200,
@@ -476,5 +500,229 @@ export class AdminController {
   async runSecurityScan() {
     await this.securityService.runSecurityScan();
     return { message: "Security scan completed successfully" };
+  }
+
+  // ===== PERMISSION MANAGEMENT ENDPOINTS =====
+
+  @Get("permissions")
+  @Permissions.ManageSystemSettings()
+  @ApiOperation({ summary: "Get all permissions with optional filtering" })
+  @ApiQuery({ name: "action", required: false, description: "Filter by action" })
+  @ApiQuery({ name: "resource", required: false, description: "Filter by resource" })
+  @ApiQuery({ name: "isActive", required: false, type: Boolean, description: "Filter by active status" })
+  @ApiResponse({ status: 200, description: "Permissions retrieved successfully" })
+  async getPermissions(
+    @Query("action") action?: string,
+    @Query("resource") resource?: string,
+    @Query("isActive") isActive?: boolean
+  ) {
+    const filters: any = {};
+    if (action) filters.action = action;
+    if (resource) filters.resource = resource;
+    if (isActive !== undefined) filters.isActive = isActive;
+    
+    const permissions = await this.permissionService.getPermissions(filters);
+    return { data: permissions };
+  }
+
+  @Get("permissions/:id")
+  @Permissions.ManageSystemSettings()
+  @ApiOperation({ summary: "Get permission by ID" })
+  @ApiParam({ name: "id", description: "Permission UUID" })
+  @ApiResponse({ status: 200, description: "Permission retrieved successfully" })
+  @ApiResponse({ status: 404, description: "Permission not found" })
+  async getPermissionById(@Param("id", ParseUUIDPipe) id: string) {
+    const permission = await this.permissionService.getPermissionById(id);
+    return { data: permission };
+  }
+
+  @Post("permissions")
+  @Permissions.ManageSystemSettings()
+  @ApiOperation({ summary: "Create new permission" })
+  @ApiResponse({ status: 201, description: "Permission created successfully" })
+  @ApiResponse({ status: 400, description: "Invalid input or permission already exists" })
+  async createPermission(@Body(ValidationPipe) createPermissionDto: CreatePermissionDto) {
+    const permission = await this.permissionService.createPermission(createPermissionDto);
+    return { data: permission };
+  }
+
+  @Put("permissions/:id")
+  @Permissions.ManageSystemSettings()
+  @ApiOperation({ summary: "Update permission" })
+  @ApiParam({ name: "id", description: "Permission UUID" })
+  @ApiResponse({ status: 200, description: "Permission updated successfully" })
+  @ApiResponse({ status: 404, description: "Permission not found" })
+  async updatePermission(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) updatePermissionDto: UpdatePermissionDto
+  ) {
+    const permission = await this.permissionService.updatePermission(id, updatePermissionDto);
+    return { data: permission };
+  }
+
+  @Delete("permissions/:id")
+  @Permissions.ManageSystemSettings()
+  @ApiOperation({ summary: "Delete permission" })
+  @ApiParam({ name: "id", description: "Permission UUID" })
+  @ApiResponse({ status: 204, description: "Permission deleted successfully" })
+  @ApiResponse({ status: 404, description: "Permission not found" })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deletePermission(@Param("id", ParseUUIDPipe) id: string) {
+    await this.permissionService.deletePermission(id);
+  }
+
+  // ===== ROLE MANAGEMENT ENDPOINTS =====
+
+  @Get("roles")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Get all roles with optional filtering" })
+  @ApiQuery({ name: "type", required: false, description: "Filter by role type" })
+  @ApiQuery({ name: "isActive", required: false, type: Boolean, description: "Filter by active status" })
+  @ApiQuery({ name: "isSystemRole", required: false, type: Boolean, description: "Filter by system role status" })
+  @ApiResponse({ status: 200, description: "Roles retrieved successfully" })
+  async getRoles(
+    @Query("type") type?: string,
+    @Query("isActive") isActive?: boolean,
+    @Query("isSystemRole") isSystemRole?: boolean
+  ) {
+    const filters: any = {};
+    if (type) filters.type = type;
+    if (isActive !== undefined) filters.isActive = isActive;
+    if (isSystemRole !== undefined) filters.isSystemRole = isSystemRole;
+    
+    const roles = await this.permissionService.getRoles(filters);
+    return { data: roles };
+  }
+
+  @Get("roles/:id")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Get role by ID" })
+  @ApiParam({ name: "id", description: "Role UUID" })
+  @ApiResponse({ status: 200, description: "Role retrieved successfully" })
+  @ApiResponse({ status: 404, description: "Role not found" })
+  async getRoleById(@Param("id", ParseUUIDPipe) id: string) {
+    const role = await this.permissionService.getRoleById(id);
+    return { data: role };
+  }
+
+  @Post("roles")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Create new role" })
+  @ApiResponse({ status: 201, description: "Role created successfully" })
+  @ApiResponse({ status: 400, description: "Invalid input or role already exists" })
+  async createRole(@Body(ValidationPipe) createRoleDto: CreateRoleDto) {
+    const role = await this.permissionService.createRole(createRoleDto);
+    return { data: role };
+  }
+
+  @Put("roles/:id")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Update role" })
+  @ApiParam({ name: "id", description: "Role UUID" })
+  @ApiResponse({ status: 200, description: "Role updated successfully" })
+  @ApiResponse({ status: 404, description: "Role not found" })
+  async updateRole(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) updateRoleDto: UpdateRoleDto
+  ) {
+    const role = await this.permissionService.updateRole(id, updateRoleDto);
+    return { data: role };
+  }
+
+  @Delete("roles/:id")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Delete role" })
+  @ApiParam({ name: "id", description: "Role UUID" })
+  @ApiResponse({ status: 204, description: "Role deleted successfully" })
+  @ApiResponse({ status: 400, description: "Cannot delete system role or role with users" })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteRole(@Param("id", ParseUUIDPipe) id: string) {
+    await this.permissionService.deleteRole(id);
+  }
+
+  @Put("roles/:id/permissions")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Update role permissions" })
+  @ApiParam({ name: "id", description: "Role UUID" })
+  @ApiResponse({ status: 200, description: "Role permissions updated successfully" })
+  @ApiResponse({ status: 404, description: "Role not found" })
+  async updateRolePermissions(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) updateDto: UpdateRolePermissionsDto
+  ) {
+    const role = await this.permissionService.updateRolePermissions(id, updateDto);
+    return { data: role };
+  }
+
+  @Post("users/:userId/assign-role")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Assign role to user" })
+  @ApiParam({ name: "userId", description: "User UUID" })
+  @ApiResponse({ status: 200, description: "Role assigned successfully" })
+  @ApiResponse({ status: 404, description: "User or role not found" })
+  @HttpCode(HttpStatus.OK)
+  async assignRoleToUser(
+    @Param("userId", ParseUUIDPipe) userId: string,
+    @Body(ValidationPipe) assignRoleDto: Omit<AssignRoleDto, 'userId'>
+  ) {
+    const fullDto = { ...assignRoleDto, userId };
+    const user = await this.permissionService.assignRoleToUser(fullDto);
+    return { data: user };
+  }
+
+  @Delete("users/:userId/role")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Remove role from user" })
+  @ApiParam({ name: "userId", description: "User UUID" })
+  @ApiResponse({ status: 200, description: "Role removed successfully" })
+  @ApiResponse({ status: 404, description: "User not found" })
+  @HttpCode(HttpStatus.OK)
+  async removeRoleFromUser(@Param("userId", ParseUUIDPipe) userId: string) {
+    const user = await this.permissionService.removeRoleFromUser(userId);
+    return { data: user };
+  }
+
+  @Post("permissions/check/:userId")
+  @Permissions.ViewUsers()
+  @ApiOperation({ summary: "Check user permission" })
+  @ApiParam({ name: "userId", description: "User UUID" })
+  @ApiResponse({ status: 200, description: "Permission check completed" })
+  @HttpCode(HttpStatus.OK)
+  async checkUserPermission(
+    @Param("userId", ParseUUIDPipe) userId: string,
+    @Body(ValidationPipe) checkPermissionDto: CheckPermissionDto
+  ) {
+    const result = await this.permissionService.checkUserPermission(userId, checkPermissionDto);
+    return { data: result };
+  }
+
+  @Post("permissions/bulk-operation")
+  @Permissions.ManageUsers()
+  @ApiOperation({ summary: "Bulk permission operation" })
+  @ApiResponse({ status: 200, description: "Bulk operation completed" })
+  @HttpCode(HttpStatus.OK)
+  async bulkPermissionOperation(@Body(ValidationPipe) bulkOperationDto: BulkPermissionOperationDto) {
+    const result = await this.permissionService.bulkPermissionOperation(bulkOperationDto);
+    return { data: result };
+  }
+
+  @Post("setup/initialize-roles")
+  @Permissions.SuperAdminOnly()
+  @ApiOperation({ summary: "Initialize system roles" })
+  @ApiResponse({ status: 200, description: "System roles initialized" })
+  @HttpCode(HttpStatus.OK)
+  async initializeSystemRoles() {
+    await this.permissionService.initializeSystemRoles();
+    return { message: "System roles initialized successfully" };
+  }
+
+  @Post("setup/seed-permissions")
+  @Permissions.SuperAdminOnly()
+  @ApiOperation({ summary: "Seed system permissions" })
+  @ApiResponse({ status: 200, description: "Permissions seeded" })
+  @HttpCode(HttpStatus.OK)
+  async seedPermissions() {
+    await this.permissionService.seedPermissions();
+    return { message: "Permissions seeded successfully" };
   }
 }

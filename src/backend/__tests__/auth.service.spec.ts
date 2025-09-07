@@ -37,6 +37,9 @@ describe("AuthService", () => {
     resumes: [],
     jobApplications: [],
     subscriptions: [],
+    hasPermission: jest.fn().mockReturnValue(false),
+    getPermissions: jest.fn().mockReturnValue([]),
+    isAdmin: jest.fn().mockReturnValue(false),
   };
 
   beforeEach(async () => {
@@ -213,7 +216,13 @@ describe("AuthService", () => {
 
     it("should throw UnauthorizedException if user is inactive", async () => {
       // Arrange
-      const inactiveUser = { ...mockUser, isActive: false };
+      const inactiveUser = {
+        ...mockUser,
+        isActive: false,
+        hasPermission: jest.fn().mockReturnValue(false),
+        getPermissions: jest.fn().mockReturnValue([]),
+        isAdmin: jest.fn().mockReturnValue(false),
+      };
       userRepository.findOne.mockResolvedValue(inactiveUser);
 
       // Act & Assert
@@ -289,7 +298,13 @@ describe("AuthService", () => {
         email: mockUser.email,
         role: mockUser.role,
       };
-      const inactiveUser = { ...mockUser, isActive: false };
+      const inactiveUser = {
+        ...mockUser,
+        isActive: false,
+        hasPermission: jest.fn().mockReturnValue(false),
+        getPermissions: jest.fn().mockReturnValue([]),
+        isAdmin: jest.fn().mockReturnValue(false),
+      };
       jwtService.verify.mockReturnValue(payload);
       userRepository.findOne.mockResolvedValue(inactiveUser);
 
@@ -335,7 +350,13 @@ describe("AuthService", () => {
 
     it("should return null if user is inactive", async () => {
       // Arrange
-      const inactiveUser = { ...mockUser, isActive: false };
+      const inactiveUser = {
+        ...mockUser,
+        isActive: false,
+        hasPermission: jest.fn().mockReturnValue(false),
+        getPermissions: jest.fn().mockReturnValue([]),
+        isAdmin: jest.fn().mockReturnValue(false),
+      };
       userRepository.findOne.mockResolvedValue(inactiveUser);
 
       // Act

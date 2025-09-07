@@ -19,6 +19,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
+import { PermissionManagement } from "./PermissionManagement";
+import { RoleManagement } from "./RoleManagement";
 
 // Types
 interface SecurityEvent {
@@ -80,7 +82,7 @@ interface SecurityStats {
 export function AdminSecurity() {
   // State management
   const [activeTab, setActiveTab] = useState<
-    "overview" | "events" | "sessions" | "settings"
+    "overview" | "events" | "sessions" | "settings" | "permissions" | "roles"
   >("overview");
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
@@ -417,6 +419,8 @@ export function AdminSecurity() {
               icon: ComputerDesktopIcon,
             },
             { id: "settings", label: "Settings", icon: KeyIcon },
+            { id: "permissions", label: "Permissions", icon: LockClosedIcon },
+            { id: "roles", label: "Roles", icon: UserIcon },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -712,7 +716,7 @@ export function AdminSecurity() {
 
       {/* Event Details Modal */}
       {showEventDetails && (
-        <Modal onClose={() => setShowEventDetails(null)}>
+        <Modal isOpen={!!showEventDetails} onClose={() => setShowEventDetails(null)}>
           <ModalHeader>
             <ModalTitle>Security Event Details</ModalTitle>
           </ModalHeader>
@@ -777,7 +781,7 @@ export function AdminSecurity() {
 
       {/* Session Details Modal */}
       {showSessionDetails && (
-        <Modal onClose={() => setShowSessionDetails(null)}>
+        <Modal isOpen={!!showSessionDetails} onClose={() => setShowSessionDetails(null)}>
           <ModalHeader>
             <ModalTitle>Session Details</ModalTitle>
           </ModalHeader>
@@ -828,6 +832,20 @@ export function AdminSecurity() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Permission Management Tab */}
+      {activeTab === "permissions" && (
+        <div>
+          <PermissionManagement />
+        </div>
+      )}
+
+      {/* Role Management Tab */}
+      {activeTab === "roles" && (
+        <div>
+          <RoleManagement />
+        </div>
       )}
     </div>
   );

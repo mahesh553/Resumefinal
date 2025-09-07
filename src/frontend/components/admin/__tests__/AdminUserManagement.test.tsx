@@ -74,7 +74,7 @@ describe("AdminUserManagement Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockUseQueryClient.mockReturnValue(mockQueryClient);
+    mockUseQueryClient.mockReturnValue(mockQueryClient as any);
     mockUseMutation.mockReturnValue({
       mutate: mockMutate,
       isLoading: false,
@@ -661,9 +661,9 @@ describe("AdminUserManagement Component", () => {
 
       const userCheckboxes = screen.getAllByRole("checkbox");
       // Should select all user checkboxes (excluding the select all checkbox)
-      expect(userCheckboxes.filter((cb) => cb.checked).length).toBe(
-        userCheckboxes.length
-      );
+      expect(
+        userCheckboxes.filter((cb: HTMLInputElement) => cb.checked).length
+      ).toBe(userCheckboxes.length);
     });
 
     it("should show bulk action menu when users are selected", async () => {

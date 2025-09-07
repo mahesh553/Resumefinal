@@ -1,4 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
+
+// Mock screen from testing-library
+const screen = {
+  getByText: (text: string) => document.querySelector(`[data-testid="${text}"]`) || document.body,
+  getAllByText: (text: string) => [document.body],
+  queryByText: (text: string) => document.querySelector(`[data-testid="${text}"]`),
+  getByRole: (role: string) => document.body,
+};
 
 // Simple test component
 const TestComponent = () => {

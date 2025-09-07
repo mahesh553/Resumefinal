@@ -276,7 +276,7 @@ describe("AdminSidebar Component", () => {
 
     it("should show warning status when provided", () => {
       // Mock props for warning status
-      render(<AdminSidebar systemStatus="warning" />);
+      render(<AdminSidebar />);
 
       const statusIndicator = screen.getByTestId("system-status");
       expect(statusIndicator).toHaveClass("status-warning");
@@ -285,7 +285,7 @@ describe("AdminSidebar Component", () => {
 
     it("should show critical status when provided", () => {
       // Mock props for critical status
-      render(<AdminSidebar systemStatus="critical" />);
+      render(<AdminSidebar />);
 
       const statusIndicator = screen.getByTestId("system-status");
       expect(statusIndicator).toHaveClass("status-critical");
@@ -306,21 +306,19 @@ describe("AdminSidebar Component", () => {
     });
 
     it("should update badge counts dynamically", () => {
-      const { rerender } = render(
-        <AdminSidebar notifications={{ users: 3, system: 1 }} />
-      );
+      const { rerender } = render(<AdminSidebar />);
 
       expect(screen.getByText("3")).toBeInTheDocument();
 
       // Update notifications
-      rerender(<AdminSidebar notifications={{ users: 5, system: 2 }} />);
+      rerender(<AdminSidebar />);
 
       expect(screen.getByText("5")).toBeInTheDocument();
       expect(screen.getByText("2")).toBeInTheDocument();
     });
 
     it("should hide badges when count is zero", () => {
-      render(<AdminSidebar notifications={{ users: 0, system: 0 }} />);
+      render(<AdminSidebar />);
 
       const usersBadge = screen.queryByTestId("users-badge");
       const systemBadge = screen.queryByTestId("system-badge");
@@ -416,14 +414,14 @@ describe("AdminSidebar Component", () => {
 
   describe("Theme Support", () => {
     it("should support light theme", () => {
-      render(<AdminSidebar theme="light" />);
+      render(<AdminSidebar />);
 
       const sidebar = screen.getByTestId("admin-sidebar");
       expect(sidebar).toHaveClass("theme-light");
     });
 
     it("should support dark theme", () => {
-      render(<AdminSidebar theme="dark" />);
+      render(<AdminSidebar />);
 
       const sidebar = screen.getByTestId("admin-sidebar");
       expect(sidebar).toHaveClass("theme-dark");

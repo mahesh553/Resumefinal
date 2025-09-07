@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, fireEvent, screen, waitFor } from "@testing-library/react";
 import { AdminDashboard } from "../AdminDashboard";
 
 // Mock the hooks
@@ -306,7 +306,7 @@ describe("AdminDashboard Component", () => {
       const featureItems = screen.getAllByTestId("feature-item");
       expect(featureItems).toHaveLength(3);
 
-      featureItems.forEach((item) => {
+      featureItems.forEach((item: HTMLElement) => {
         expect(item).toBeInTheDocument();
       });
     });

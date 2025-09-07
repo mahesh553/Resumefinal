@@ -96,7 +96,7 @@ describe("AdminSecurity Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockUseQueryClient.mockReturnValue(mockQueryClient);
+    mockUseQueryClient.mockReturnValue(mockQueryClient as any);
     mockUseMutation.mockReturnValue({
       mutate: mockMutate,
       isLoading: false,
@@ -293,7 +293,7 @@ describe("AdminSecurity Component", () => {
       // Find the terminate button for a non-current session
       const terminateButtons = screen.getAllByText("Terminate");
       const nonCurrentSessionButton = terminateButtons.find(
-        (button) =>
+        (button: HTMLElement) =>
           !button
             .closest("tr")
             ?.querySelector('[data-testid="current-session"]')

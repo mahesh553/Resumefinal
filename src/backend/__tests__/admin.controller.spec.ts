@@ -75,7 +75,7 @@ describe("AdminController", () => {
 
     const mockSystemMonitoringService = {
       getSystemHealth: jest.fn(),
-      getPerformanceMetrics: jest.fn(),
+      getPerformanceHistory: jest.fn(),
       getDatabaseMetrics: jest.fn(),
       getQueueMetrics: jest.fn(),
       getRecentErrors: jest.fn(),
@@ -275,12 +275,10 @@ describe("AdminController", () => {
         // Arrange
         const mockUsersResponse = {
           users: [mockUser],
-          pagination: {
-            page: 1,
-            limit: 10,
-            total: 1,
-            totalPages: 1,
-          },
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
         };
         userManagementService.getUsers.mockResolvedValue(mockUsersResponse);
 
@@ -391,11 +389,58 @@ describe("AdminController", () => {
       it("should return system health status", async () => {
         // Arrange
         const mockHealthStatus = {
-          status: "healthy",
+          status: "healthy" as const,
           uptime: 3600,
-          database: { status: "connected", responseTime: 10 },
-          redis: { status: "connected", responseTime: 2 },
-          aiServices: { status: "available", responseTime: 150 },
+          timestamp: new Date().toISOString(),
+          services: {
+            database: {
+              status: "healthy" as const,
+              responseTime: 10,
+              lastCheck: new Date().toISOString(),
+            },
+            redis: {
+              status: "healthy" as const,
+              responseTime: 2,
+              lastCheck: new Date().toISOString(),
+            },
+            ai: {
+              status: "healthy" as const,
+              responseTime: 150,
+              lastCheck: new Date().toISOString(),
+            },
+            websocket: {
+              status: "healthy" as const,
+              responseTime: 5,
+              lastCheck: new Date().toISOString(),
+            },
+            queue: {
+              status: "healthy" as const,
+              responseTime: 8,
+              lastCheck: new Date().toISOString(),
+            },
+          },
+          performance: {
+            memory: {
+              total: 8192,
+              used: 2048,
+              free: 6144,
+              percentage: 25,
+              heap: { total: 1024, used: 512, percentage: 50 },
+            },
+            cpu: { usage: 45.2, cores: 4, model: "Intel", speed: 2400 },
+            disk: { total: 100000, used: 50000, free: 50000, percentage: 50 },
+            network: {
+              requests: {
+                total: 1000,
+                success: 980,
+                errors: 20,
+                avgResponseTime: 120,
+              },
+              connections: { active: 10, idle: 5 },
+            },
+          },
+          errors: [],
+          warnings: [],
         };
         systemMonitoringService.getSystemHealth.mockResolvedValue(
           mockHealthStatus
@@ -412,23 +457,53 @@ describe("AdminController", () => {
       });
     });
 
-    describe("getPerformanceMetrics", () => {
-      it("should return performance metrics", async () => {
+    describe("getPerformanceHistory", () => {
+      it("should return performance history with default hours", async () => {
         // Arrange
-        const mockMetrics = {
-          cpu: { usage: 45.2, cores: 4 },
-          memory: { usage: 2048, total: 8192, percentage: 25 },
-          responseTime: { average: 120, p95: 250, p99: 500 },
-        };
-        systemMonitoringService.getPerformanceMetrics.mockResolvedValue(
+        const mockMetrics = [
+          {
+            timestamp: new Date().toISOString(),
+            responseTime: { avg: 120, p50: 100, p95: 250, p99: 500 },
+            throughput: { requests: 150, errors: 5, successRate: 96.7 },
+            resources: { cpuUsage: 45.2, memoryUsage: 25, diskUsage: 30 },
+          },
+        ];
+        systemMonitoringService.getPerformanceHistory.mockResolvedValue(
           mockMetrics
         );
 
         // Act
-        const result = await controller.getPerformanceMetrics();
+        const result = await controller.getPerformanceHistory();
 
         // Assert
         expect(result).toEqual(mockMetrics);
+        expect(
+          systemMonitoringService.getPerformanceHistory
+        ).toHaveBeenCalledWith(24);
+      });
+
+      it("should return performance history with custom hours", async () => {
+        // Arrange
+        const mockMetrics = [
+          {
+            timestamp: new Date().toISOString(),
+            responseTime: { avg: 120, p50: 100, p95: 250, p99: 500 },
+            throughput: { requests: 150, errors: 5, successRate: 96.7 },
+            resources: { cpuUsage: 45.2, memoryUsage: 25, diskUsage: 30 },
+          },
+        ];
+        systemMonitoringService.getPerformanceHistory.mockResolvedValue(
+          mockMetrics
+        );
+
+        // Act
+        const result = await controller.getPerformanceHistory(12);
+
+        // Assert
+        expect(result).toEqual(mockMetrics);
+        expect(
+          systemMonitoringService.getPerformanceHistory
+        ).toHaveBeenCalledWith(12);
       });
     });
 
@@ -438,9 +513,11 @@ describe("AdminController", () => {
         const mockErrors = [
           {
             id: "error-1",
+            timestamp: new Date().toISOString(),
+            level: "error" as const,
             message: "Test error",
-            timestamp: new Date(),
-            severity: "high",
+            source: "system",
+            count: 1,
           },
         ];
         systemMonitoringService.getRecentErrors.mockResolvedValue(mockErrors);
@@ -460,9 +537,11 @@ describe("AdminController", () => {
         const mockErrors = [
           {
             id: "error-1",
+            timestamp: new Date().toISOString(),
+            level: "error" as const,
             message: "Test error",
-            timestamp: new Date(),
-            severity: "high",
+            source: "system",
+            count: 1,
           },
         ];
         systemMonitoringService.getRecentErrors.mockResolvedValue(mockErrors);
