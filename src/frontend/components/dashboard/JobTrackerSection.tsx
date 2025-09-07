@@ -1,10 +1,11 @@
 "use client";
 
+import { useWebSocketContext } from "@/components/providers/WebSocketProvider";
 import { Button } from "@/components/ui/Button";
+import ConnectionStatusIndicator from "@/components/ui/ConnectionStatusIndicator";
 import { EnhancedPagination } from "@/components/ui/EnhancedPagination";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { useJobList, useJobStats, useDeleteJob } from "@/hooks/api";
-import { useWebSocketContext } from "@/components/providers/WebSocketProvider";
+import { useDeleteJob, useJobList, useJobStats } from "@/hooks/api";
 import { apiClient } from "@/lib/api";
 import { exportJobs } from "@/lib/exportUtils";
 import type { Job as _Job } from "@/types";
@@ -13,9 +14,8 @@ import {
   ExclamationTriangleIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
-import ConnectionStatusIndicator from "@/components/ui/ConnectionStatusIndicator";
 import { BulkOperations } from "./bulk/BulkOperations";
 import {
   AdvancedJobFilters,
@@ -29,12 +29,12 @@ import { ViewJobModal } from "./modals/ViewJobModal";
 export function JobTrackerSection() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [realTimeUpdates, setRealTimeUpdates] = useState<{
-    [jobId: string]: { action: string; timestamp: string }
+    [jobId: string]: { action: string; timestamp: string };
   }>({});
-  
+
   // WebSocket context for real-time updates
   const { isConnected, on } = useWebSocketContext();
-  
+
   // Advanced filtering state
   const [filters, setFilters] = useState<JobFilters>({
     search: "",
@@ -45,7 +45,7 @@ export function JobTrackerSection() {
     sortBy: "appliedDate",
     sortOrder: "DESC",
   });
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -119,65 +119,71 @@ export function JobTrackerSection() {
     if (!isConnected) return;
 
     // Subscribe to job updates (CRUD operations)
-    const unsubscribeJobUpdate = on('job_updated', (data: {
-      job?: any;
-      jobId?: string;
-      action: 'created' | 'updated' | 'deleted';
-      timestamp: string;
-    }) => {
-      // Update real-time status for UI feedback
-      if (data.jobId) {
-        setRealTimeUpdates(prev => ({
+    const unsubscribeJobUpdate = on(
+      "job_updated",
+      (data: {
+        job?: any;
+        jobId?: string;
+        action: "created" | "updated" | "deleted";
+        timestamp: string;
+      }) => {
+        // Update real-time status for UI feedback
+        if (data.jobId) {
+          setRealTimeUpdates((prev) => ({
+            ...prev,
+            [data.jobId!]: { action: data.action, timestamp: data.timestamp },
+          }));
+
+          // Auto-clear the update indicator after 5 seconds
+          setTimeout(() => {
+            setRealTimeUpdates((prev) => {
+              const newUpdates = { ...prev };
+              if (data.jobId) {
+                delete newUpdates[data.jobId];
+              }
+              return newUpdates;
+            });
+          }, 5000);
+        }
+
+        // Refetch job data and stats to get updated information
+        refetchJobs();
+        refetchStats();
+      }
+    );
+
+    // Subscribe to job status updates
+    const unsubscribeJobStatus = on(
+      "job_status_updated",
+      (data: {
+        jobId: string;
+        oldStatus: string;
+        newStatus: string;
+        timestamp: string;
+      }) => {
+        // Update real-time status indicator
+        setRealTimeUpdates((prev) => ({
           ...prev,
-          [data.jobId!]: { action: data.action, timestamp: data.timestamp }
+          [data.jobId]: {
+            action: `status_changed_${data.newStatus}`,
+            timestamp: data.timestamp,
+          },
         }));
-        
-        // Auto-clear the update indicator after 5 seconds
+
+        // Auto-clear after 5 seconds
         setTimeout(() => {
-          setRealTimeUpdates(prev => {
+          setRealTimeUpdates((prev) => {
             const newUpdates = { ...prev };
-            if (data.jobId) {
-              delete newUpdates[data.jobId];
-            }
+            delete newUpdates[data.jobId];
             return newUpdates;
           });
         }, 5000);
-      }
-      
-      // Refetch job data and stats to get updated information
-      refetchJobs();
-      refetchStats();
-    });
 
-    // Subscribe to job status updates
-    const unsubscribeJobStatus = on('job_status_updated', (data: {
-      jobId: string;
-      oldStatus: string;
-      newStatus: string;
-      timestamp: string;
-    }) => {
-      // Update real-time status indicator
-      setRealTimeUpdates(prev => ({
-        ...prev,
-        [data.jobId]: { 
-          action: `status_changed_${data.newStatus}`, 
-          timestamp: data.timestamp 
-        }
-      }));
-      
-      // Auto-clear after 5 seconds
-      setTimeout(() => {
-        setRealTimeUpdates(prev => {
-          const newUpdates = { ...prev };
-          delete newUpdates[data.jobId];
-          return newUpdates;
-        });
-      }, 5000);
-      
-      // Refetch data
-      refetchJobs();
-      refetchStats();
-    });
+        // Refetch data
+        refetchJobs();
+        refetchStats();
+      }
+    );
 
     return () => {
       unsubscribeJobUpdate();
@@ -187,8 +193,8 @@ export function JobTrackerSection() {
 
   // Update pagination when job data changes
   useEffect(() => {
-    if (jobPagination && typeof jobPagination === 'object') {
-      setPagination(prev => ({
+    if (jobPagination && typeof jobPagination === "object") {
+      setPagination((prev) => ({
         ...prev,
         total: (jobPagination as any).total || 0,
         totalPages: (jobPagination as any).totalPages || 0,
@@ -198,7 +204,7 @@ export function JobTrackerSection() {
 
   // Reset pagination when filters change
   useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
     setSelectedJobs([]);
   }, [filters]);
 
@@ -211,7 +217,7 @@ export function JobTrackerSection() {
       await deleteJobMutation.mutateAsync(jobId);
     } catch (error) {
       // Error handling is done in the mutation
-      console.error('Delete job error:', error);
+      console.error("Delete job error:", error);
     }
   };
 
@@ -282,7 +288,9 @@ export function JobTrackerSection() {
     try {
       const result = await apiClient.bulkUpdateJobStatus(selectedJobs, status);
       if (result.error) {
-        toast.error(result.error);
+        toast.error(
+          typeof result.error === "string" ? result.error : result.error.message
+        );
         return;
       }
 
@@ -307,7 +315,9 @@ export function JobTrackerSection() {
     }
 
     try {
-      const promises = selectedJobs.map((jobId) => deleteJobMutation.mutateAsync(jobId));
+      const promises = selectedJobs.map((jobId) =>
+        deleteJobMutation.mutateAsync(jobId)
+      );
       await Promise.all(promises);
 
       toast.success(`Deleted ${selectedJobs.length} job applications`);
@@ -339,7 +349,7 @@ export function JobTrackerSection() {
   // Loading and error states
   const isLoading = isLoadingJobs || isLoadingStats;
   const error = jobError || statsError;
-  
+
   // Memoized filtered jobs for search highlighting
   const displayJobs = useMemo(() => {
     if (!filters.search.trim()) return jobs;
@@ -371,11 +381,17 @@ export function JobTrackerSection() {
         <h3 className="text-lg font-medium text-gray-900 mb-2">
           Failed to Load Jobs
         </h3>
-        <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : String(error)}</p>
-        <Button onClick={() => {
-          refetchJobs();
-          refetchStats();
-        }}>Try Again</Button>
+        <p className="text-gray-600 mb-4">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+        <Button
+          onClick={() => {
+            refetchJobs();
+            refetchStats();
+          }}
+        >
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -469,11 +485,11 @@ export function JobTrackerSection() {
                   {realtimeUpdate && (
                     <div className="absolute -top-2 right-4 z-10">
                       <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
-                        {realtimeUpdate.action === 'created' && 'New!'}
-                        {realtimeUpdate.action === 'updated' && 'Updated!'}
-                        {realtimeUpdate.action === 'deleted' && 'Deleted!'}
-                        {realtimeUpdate.action.startsWith('status_changed_') && 
-                          `Status: ${realtimeUpdate.action.split('_')[2]}`}
+                        {realtimeUpdate.action === "created" && "New!"}
+                        {realtimeUpdate.action === "updated" && "Updated!"}
+                        {realtimeUpdate.action === "deleted" && "Deleted!"}
+                        {realtimeUpdate.action.startsWith("status_changed_") &&
+                          `Status: ${realtimeUpdate.action.split("_")[2]}`}
                       </div>
                     </div>
                   )}

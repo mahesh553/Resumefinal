@@ -1,0 +1,52 @@
+module.exports = {
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    project: "./tsconfig.json",
+    tsconfigRootDir: "./",
+    sourceType: "module",
+  },
+  plugins: ["@typescript-eslint/eslint-plugin"],
+  extends: ["eslint:recommended"],
+  root: true,
+  env: {
+    node: true,
+    jest: true,
+    es6: true,
+  },
+  ignorePatterns: [
+    ".eslintrc.js",
+    "dist/",
+    "node_modules/",
+    "*.config.js",
+    "next.config.js",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "src/frontend/**/*",
+  ],
+  overrides: [
+    {
+      files: ["src/backend/**/*.ts", "src/backend/**/*.js"],
+      rules: {
+        "@next/next/no-assign-module-variable": "off",
+      },
+      parserOptions: {
+        project: "./tsconfig.json",
+      },
+    },
+    {
+      files: ["*.js"],
+      parserOptions: {
+        project: null,
+      },
+    },
+  ],
+  rules: {
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-unused-vars": "off",
+    "no-undef": "off",
+  },
+};

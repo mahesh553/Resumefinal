@@ -1,0 +1,33 @@
+{
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/src/frontend/__tests__/setup.ts"],
+  "testMatch": [
+    "<rootDir>/src/frontend/**/__tests__/**/*.{js,jsx,ts,tsx}",
+    "<rootDir>/src/frontend/**/*.(test|spec).{js,jsx,ts,tsx}"
+  ],
+  "testPathIgnorePatterns": [
+    "<rootDir>/.next/",
+    "<rootDir>/node_modules/",
+    "<rootDir>/src/backend/"
+  ],
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/components/(.*)$": "<rootDir>/src/frontend/components/$1",
+    "^@/lib/(.*)$": "<rootDir>/src/frontend/lib/$1",
+    "^@/hooks/(.*)$": "<rootDir>/src/frontend/hooks/$1",
+    "^@/types/(.*)$": "<rootDir>/src/frontend/types/$1"
+  },
+  "collectCoverageFrom": [
+    "src/frontend/**/*.{js,jsx,ts,tsx}",
+    "!src/frontend/**/*.d.ts",
+    "!src/frontend/app/**/*.{js,jsx,ts,tsx}",
+    "!src/frontend/**/*.stories.{js,jsx,ts,tsx}"
+  ],
+  "preset": "ts-jest/presets/js-with-ts",
+  "extensionsToTreatAsEsm": [".ts", ".tsx"],
+  "globals": {
+    "ts-jest": {
+      "useESM": true
+    }
+  }
+}

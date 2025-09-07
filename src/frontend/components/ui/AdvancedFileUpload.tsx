@@ -119,7 +119,11 @@ export function AdvancedFileUpload({
           setFiles((prev) =>
             prev.map((f) => (f.id === file.id ? { ...f, status: "error" } : f))
           );
-          toast.error(result.error);
+          toast.error(
+            typeof result.error === "string"
+              ? result.error
+              : result.error.message
+          );
           return;
         }
 

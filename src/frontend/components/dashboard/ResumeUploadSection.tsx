@@ -99,7 +99,11 @@ export function ResumeUploadSection() {
         });
 
         if (result.error) {
-          throw new Error(result.error);
+          throw new Error(
+            typeof result.error === "string"
+              ? result.error
+              : result.error.message
+          );
         }
 
         // Update to processing
