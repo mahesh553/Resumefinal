@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { render, fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AdminDashboard } from "../AdminDashboard";
 
 // Mock the hooks
