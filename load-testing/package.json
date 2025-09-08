@@ -1,0 +1,22 @@
+{
+  "name": "qoder-resume-load-testing",
+  "version": "1.0.0",
+  "description": "Load testing suite for QoderResume platform",
+  "main": "node-load-test.js",
+  "scripts": {
+    "test:load": "node node-load-test.js",
+    "test:smoke": "CONCURRENT_USERS=5 TEST_DURATION=60 node node-load-test.js",
+    "test:stress": "CONCURRENT_USERS=50 TEST_DURATION=300 node node-load-test.js",
+    "test:spike": "CONCURRENT_USERS=100 TEST_DURATION=120 node node-load-test.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "keywords": [
+    "load-testing",
+    "performance",
+    "api-testing"
+  ],
+  "author": "QoderResume Team",
+  "license": "MIT"
+}

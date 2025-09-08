@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import * as os from "os";
 import { DataSource } from "typeorm";
+import { MetricsService } from "../../../common/services/metrics.service";
 
 export interface SystemHealth {
   status: "healthy" | "warning" | "critical";
@@ -118,7 +119,8 @@ export class SystemMonitoringService {
 
   constructor(
     @InjectDataSource()
-    private dataSource: DataSource
+    private dataSource: DataSource,
+    private readonly metricsService: MetricsService
   ) {
     // Start monitoring interval
     this.startMonitoring();
@@ -175,6 +177,18 @@ export class SystemMonitoringService {
       const startTime = Date.now();
       await this.dataSource.query("SELECT 1");
       const responseTime = Date.now() - startTime;
+      const duration = responseTime / 1000;
+
+      // Record metrics
+      this.metricsService.recordDatabaseQuery("health_check", duration, true);
+
+      // Get connection count and update metrics
+      try {
+        const connectionCount = this.dataSource.isInitialized ? 1 : 0; // Simplified
+        this.metricsService.updateDatabaseConnections(connectionCount);
+      } catch (connError) {
+        this.logger.warn("Failed to get database connection count:", connError);
+      }
 
       const status = responseTime > 1000 ? "warning" : "healthy";
 
@@ -186,6 +200,11 @@ export class SystemMonitoringService {
       };
     } catch (error) {
       this.logger.error("Database health check failed:", error);
+
+      // Record failed metrics
+      this.metricsService.recordDatabaseQuery("health_check", 0, false);
+      this.metricsService.recordError("database_connection_failed", "critical");
+
       return {
         status: "critical",
         lastCheck: new Date().toISOString(),
@@ -389,34 +408,65 @@ export class SystemMonitoringService {
   }
 
   private startMonitoring(): void {
-    // Collect performance metrics every minute
+    // Update metrics every 30 seconds
     setInterval(() => {
-      const metrics: PerformanceMetrics = {
-        timestamp: new Date().toISOString(),
-        responseTime: {
-          avg: 200 + Math.random() * 100,
-          p50: 180 + Math.random() * 50,
-          p95: 400 + Math.random() * 200,
-          p99: 800 + Math.random() * 300,
-        },
-        throughput: {
-          requests: Math.floor(100 + Math.random() * 200),
-          errors: Math.floor(Math.random() * 10),
-          successRate: 95 + Math.random() * 5,
-        },
-        resources: {
-          cpuUsage: 20 + Math.random() * 30,
-          memoryUsage: 40 + Math.random() * 20,
-          diskUsage: 25 + Math.random() * 5,
-        },
-      };
+      try {
+        // Update memory and CPU metrics
+        this.metricsService.updateMemoryMetrics();
+        this.metricsService.updateCpuMetrics();
 
-      this.performanceMetrics.unshift(metrics);
+        // Check and update queue metrics (mock for now)
+        this.updateQueueMetrics();
 
-      // Keep only last 24 hours of data
-      if (this.performanceMetrics.length > 24 * 60) {
-        this.performanceMetrics = this.performanceMetrics.slice(0, 24 * 60);
+        // Collect performance metrics every minute
+        const metrics: PerformanceMetrics = {
+          timestamp: new Date().toISOString(),
+          responseTime: {
+            avg: 200 + Math.random() * 100,
+            p50: 180 + Math.random() * 50,
+            p95: 400 + Math.random() * 200,
+            p99: 800 + Math.random() * 300,
+          },
+          throughput: {
+            requests: Math.floor(100 + Math.random() * 200),
+            errors: Math.floor(Math.random() * 10),
+            successRate: 95 + Math.random() * 5,
+          },
+          resources: {
+            cpuUsage: 20 + Math.random() * 30,
+            memoryUsage: 40 + Math.random() * 20,
+            diskUsage: 25 + Math.random() * 5,
+          },
+        };
+
+        this.performanceMetrics.unshift(metrics);
+
+        // Keep only last 24 hours of data
+        if (this.performanceMetrics.length > 24 * 60) {
+          this.performanceMetrics = this.performanceMetrics.slice(0, 24 * 60);
+        }
+      } catch (error) {
+        this.logger.error("Error in monitoring interval:", error);
       }
-    }, 60000); // Every minute
+    }, 30000); // Every 30 seconds
+  }
+
+  private updateQueueMetrics(): void {
+    try {
+      // Mock queue metrics - in real implementation, this would query BullMQ
+      const queues = ["resume-analysis", "jd-matching", "bulk-analysis"];
+
+      queues.forEach((queueName) => {
+        const activeJobs = Math.floor(Math.random() * 10);
+        const waitingJobs = Math.floor(Math.random() * 50);
+        this.metricsService.updateQueueMetrics(
+          queueName,
+          activeJobs,
+          waitingJobs
+        );
+      });
+    } catch (error) {
+      this.logger.error("Failed to update queue metrics:", error);
+    }
   }
 }

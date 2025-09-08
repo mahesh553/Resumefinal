@@ -1,0 +1,102 @@
+version: "3.8"
+
+services:
+  # Elasticsearch for log storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: qoder-elasticsearch
+    environment:
+      - node.name=qoder-es-node
+      - cluster.name=qoder-cluster
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - logging
+
+  # Logstash for log processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    container_name: qoder-logstash
+    ports:
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    volumes:
+      - ./logging/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logging/logstash/pipeline:/usr/share/logstash/pipeline
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+
+  # Kibana for log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: qoder-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      SERVER_NAME: qoder-kibana
+    volumes:
+      - ./logging/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+
+  # Filebeat for log shipping
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.8.0
+    container_name: qoder-filebeat
+    user: root
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - ./logging/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./logs:/var/log/qoder-resume
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+      - logstash
+
+  # Log rotation and management
+  logrotate:
+    image: alpine:latest
+    container_name: qoder-logrotate
+    volumes:
+      - ./logs:/var/log/qoder-resume
+      - ./logging/logrotate/logrotate.conf:/etc/logrotate.conf
+    command: >
+      sh -c "
+        apk add --no-cache logrotate &&
+        while true; do
+          logrotate /etc/logrotate.conf
+          sleep 3600
+        done
+      "
+    networks:
+      - logging
+
+volumes:
+  elasticsearch_data:
+
+networks:
+  logging:
+    driver: bridge

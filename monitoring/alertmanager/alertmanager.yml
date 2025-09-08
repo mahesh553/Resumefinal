@@ -1,0 +1,282 @@
+global:
+  smtp_smarthost: "localhost:587"
+  smtp_from: "alerts@qoderresume.com"
+  smtp_auth_username: "alerts@qoderresume.com"
+  smtp_auth_password: "your-email-password"
+  # Slack webhook URL
+  slack_api_url: "YOUR_SLACK_WEBHOOK_URL"
+
+route:
+  group_by: ["alertname", "cluster", "service"]
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: "default"
+  routes:
+    # Critical alerts go to on-call immediately
+    - match:
+        severity: critical
+      receiver: "critical-alerts"
+      group_wait: 0s
+      repeat_interval: 5m
+
+    # Security alerts go to security team
+    - match:
+        service: security
+      receiver: "security-alerts"
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Infrastructure alerts go to ops team
+    - match:
+        service: infrastructure
+      receiver: "infrastructure-alerts"
+      group_wait: 1m
+      repeat_interval: 2h
+
+    # AI service alerts
+    - match:
+        service: ai
+      receiver: "ai-service-alerts"
+      group_wait: 2m
+      repeat_interval: 30m
+
+    # Business metric alerts
+    - match:
+        service: business
+      receiver: "business-alerts"
+      group_wait: 5m
+      repeat_interval: 4h
+
+    # Warning alerts (less urgent)
+    - match:
+        severity: warning
+      receiver: "warning-alerts"
+      group_wait: 5m
+      repeat_interval: 6h
+
+receivers:
+  - name: "default"
+    email_configs:
+      - to: "team@qoderresume.com"
+        subject: "🔔 QoderResume Alert - {{ .GroupLabels.alertname }}"
+        body: |
+          Alert: {{ .GroupLabels.alertname }}
+          Service: {{ .CommonLabels.service }}
+          Severity: {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+          {{ end }}
+
+  - name: "critical-alerts"
+    email_configs:
+      - to: "oncall@qoderresume.com, admin@qoderresume.com"
+        subject: "🚨 CRITICAL ALERT - QoderResume {{ .GroupLabels.alertname }}"
+        html: |
+          <h2 style="color: red;">🚨 CRITICAL PRODUCTION ALERT</h2>
+          <p><strong>Service:</strong> {{ .CommonLabels.service }}</p>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Time:</strong> {{ .CommonAnnotations.timestamp }}</p>
+
+          {{ range .Alerts }}
+          <div style="border: 2px solid red; padding: 10px; margin: 10px 0;">
+            <h3>{{ .Annotations.summary }}</h3>
+            <p>{{ .Annotations.description }}</p>
+            {{ if .Annotations.runbook_url }}
+            <p><a href="{{ .Annotations.runbook_url }}">📖 Runbook</a></p>
+            {{ end }}
+          </div>
+          {{ end }}
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#critical-alerts"
+        color: "danger"
+        title: "🚨 CRITICAL: {{ .GroupLabels.alertname }}"
+        text: |
+          *Service:* {{ .CommonLabels.service }}
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          {{ end }}
+        actions:
+          - type: button
+            text: "View Grafana"
+            url: "http://localhost:3002"
+          - type: button
+            text: "Check Logs"
+            url: "http://localhost:3002/explore"
+    # PagerDuty integration for critical alerts
+    pagerduty_configs:
+      - routing_key: "YOUR_PAGERDUTY_INTEGRATION_KEY"
+        description: "{{ .GroupLabels.alertname }} - {{ .CommonLabels.service }}"
+        details:
+          service: "{{ .CommonLabels.service }}"
+          severity: "{{ .CommonLabels.severity }}"
+          summary: "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+
+  - name: "security-alerts"
+    email_configs:
+      - to: "security@qoderresume.com, admin@qoderresume.com"
+        subject: "🔒 SECURITY ALERT - QoderResume {{ .GroupLabels.alertname }}"
+        body: |
+          🔒 SECURITY ALERT DETECTED
+
+          Alert: {{ .GroupLabels.alertname }}
+          Time: {{ .CommonAnnotations.timestamp }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+          {{ end }}
+
+          Immediate action may be required to investigate potential security threats.
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#security-alerts"
+        color: "warning"
+        title: "🔒 Security Alert: {{ .GroupLabels.alertname }}"
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
+
+  - name: "infrastructure-alerts"
+    email_configs:
+      - to: "ops@qoderresume.com"
+        subject: "⚙️ Infrastructure Alert - {{ .GroupLabels.alertname }}"
+        body: |
+          ⚙️ Infrastructure Alert
+
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#infrastructure"
+        title: "⚙️ Infrastructure: {{ .GroupLabels.alertname }}"
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+
+  - name: "ai-service-alerts"
+    email_configs:
+      - to: "ai-team@qoderresume.com, dev@qoderresume.com"
+        subject: "🤖 AI Service Alert - {{ .GroupLabels.alertname }}"
+        body: |
+          🤖 AI Service Alert
+
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#ai-services"
+        title: "🤖 AI Alert: {{ .GroupLabels.alertname }}"
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
+
+  - name: "business-alerts"
+    email_configs:
+      - to: "product@qoderresume.com, business@qoderresume.com"
+        subject: "📊 Business Metrics Alert - {{ .GroupLabels.alertname }}"
+        body: |
+          📊 Business Metrics Alert
+
+          Alert: {{ .GroupLabels.alertname }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+          This may indicate user experience issues or business impact.
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#business-metrics"
+        title: "📊 Business Alert: {{ .GroupLabels.alertname }}"
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+
+  - name: "warning-alerts"
+    email_configs:
+      - to: "team@qoderresume.com"
+        subject: "⚠️ Warning Alert - QoderResume {{ .GroupLabels.alertname }}"
+        body: |
+          ⚠️ Warning Alert
+
+          Alert: {{ .GroupLabels.alertname }}
+          Service: {{ .CommonLabels.service }}
+
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: "{{ .GlobalSLACKAPIURL }}"
+        channel: "#alerts"
+        color: "warning"
+        title: "⚠️ Warning: {{ .GroupLabels.alertname }}"
+        text: |
+          *Service:* {{ .CommonLabels.service }}
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+
+inhibit_rules:
+  # If the application is down, inhibit all other alerts from that service
+  - source_match:
+      alertname: "ApplicationDown"
+    target_match:
+      service: "qoder-resume"
+    equal: ["instance"]
+
+  # If we have critical alerts, inhibit warning alerts for the same issue
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "instance"]
+
+  # If CPU is critical, inhibit memory warnings (likely related)
+  - source_match:
+      alertname: "CriticalCPUUsage"
+    target_match:
+      alertname: "HighMemoryUsage"
+    equal: ["instance"]
+
+  # If we have infrastructure critical alerts, inhibit performance warnings
+  - source_match:
+      severity: "critical"
+      service: "infrastructure"
+    target_match:
+      severity: "warning"
+      service: "qoder-resume"
+    equal: ["instance"]
+
+  # If AI service is down, inhibit queue backlog alerts (they're related)
+  - source_match:
+      alertname: "AIServiceDown"
+    target_match:
+      alertname: "QueueBacklogCritical"
+    equal: ["instance"]

@@ -2,6 +2,7 @@ import { BullModule } from "@nestjs/bull";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { MonitoringModule } from "./common/monitoring.module";
 import * as entities from "./database/entities";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AIModule } from "./modules/ai/ai.module";
@@ -102,6 +103,9 @@ import { QueueProcessorModule } from "./queues/queue-processor.module";
 
     // Queue processing
     QueueProcessorModule,
+
+    // Monitoring
+    MonitoringModule,
   ],
   controllers: [],
   providers: [],

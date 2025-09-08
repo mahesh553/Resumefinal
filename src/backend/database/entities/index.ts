@@ -1,7 +1,9 @@
-export { User } from './user.entity';
-export { Resume } from './resume.entity';
-export { ResumeVersion } from './resume-version.entity';
-export { JobApplication } from './job-application.entity';
-export { JdMatching } from './jd-matching.entity';
-export { SubscriptionPlan } from './subscription-plan.entity';
-export { UserSubscription, UsageRecord } from './subscription.entity';
+export { JdMatching } from "./jd-matching.entity";
+export { JobApplication } from "./job-application.entity";
+export { Permission } from "./permission.entity";
+export { ResumeVersion } from "./resume-version.entity";
+export { Resume } from "./resume.entity";
+export { Role } from "./role.entity";
+export { SubscriptionPlan } from "./subscription-plan.entity";
+export { UsageRecord, UserSubscription } from "./subscription.entity";
+export { User } from "./user.entity";

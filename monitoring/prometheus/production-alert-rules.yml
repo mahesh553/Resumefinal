@@ -1,0 +1,340 @@
+groups:
+  # ===== APPLICATION AVAILABILITY ALERTS =====
+  - name: application_availability
+    rules:
+      # Critical: Service is completely down
+      - alert: ApplicationDown
+        expr: up{job="qoder-resume-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: qoder-resume
+        annotations:
+          summary: "🚨 QoderResume application is DOWN"
+          description: "The QoderResume backend service has been down for more than 1 minute. This is a critical production issue."
+          runbook_url: "https://docs.qoderresume.com/runbooks/application-down"
+
+      # Critical: High error rate indicates serious issues
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status_code=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: qoder-resume
+        annotations:
+          summary: "🚨 High error rate detected: {{ $value | humanizePercentage }}"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes, exceeding 5% threshold"
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-error-rate"
+
+      # Warning: Elevated error rate
+      - alert: ElevatedErrorRate
+        expr: rate(http_requests_total{status_code=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: qoder-resume
+        annotations:
+          summary: "⚠️ Elevated error rate: {{ $value | humanizePercentage }}"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes, exceeding 1% threshold"
+
+  # ===== PERFORMANCE ALERTS =====
+  - name: performance_alerts
+    rules:
+      # Critical: Very high response times
+      - alert: VeryHighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: critical
+          service: qoder-resume
+        annotations:
+          summary: "🚨 Very high response time: {{ $value }}s"
+          description: "95th percentile response time is {{ $value }}s, exceeding 5 second critical threshold"
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-response-time"
+
+      # Warning: High response times
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: qoder-resume
+        annotations:
+          summary: "⚠️ High response time: {{ $value }}s"
+          description: "95th percentile response time is {{ $value }}s, exceeding 2 second warning threshold"
+
+  # ===== INFRASTRUCTURE ALERTS =====
+  - name: infrastructure_alerts
+    rules:
+      # Critical: Very high CPU usage
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 3m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: '🚨 Critical CPU usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'CPU usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 90% critical threshold'
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-cpu"
+
+      # Warning: High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 75
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: '⚠️ High CPU usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'CPU usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 75% warning threshold'
+
+      # Critical: Very high memory usage
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: '🚨 Critical memory usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'Memory usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 95% critical threshold'
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-memory"
+
+      # Warning: High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: '⚠️ High memory usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'Memory usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 85% warning threshold'
+
+      # Critical: Very high disk usage
+      - alert: CriticalDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: '🚨 Critical disk usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'Disk usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 95% critical threshold'
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-disk-usage"
+
+      # Warning: High disk usage
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: '⚠️ High disk usage on {{ $labels.instance }}: {{ $value | printf "%.2f" }}%'
+          description: 'Disk usage is {{ $value | printf "%.2f" }}% on {{ $labels.instance }}, exceeding 85% warning threshold'
+
+  # ===== DATABASE ALERTS =====
+  - name: database_alerts
+    rules:
+      # Critical: Database connection failures
+      - alert: DatabaseConnectionFailure
+        expr: rate(database_queries_total{status="error"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "🚨 Database connection failures detected"
+          description: "Database is experiencing {{ $value }} connection failures per second"
+          runbook_url: "https://docs.qoderresume.com/runbooks/database-connection-failure"
+
+      # Warning: Slow database queries
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "⚠️ Slow database queries detected"
+          description: "95th percentile database query time is {{ $value }}s, exceeding 1 second threshold"
+
+      # Critical: High database connections
+      - alert: DatabaseConnectionsHigh
+        expr: database_connections_active > 80
+        for: 3m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "🚨 High database connections: {{ $value }}"
+          description: "Database has {{ $value }} active connections, approaching connection limit"
+          runbook_url: "https://docs.qoderresume.com/runbooks/high-db-connections"
+
+  # ===== REDIS ALERTS =====
+  - name: redis_alerts
+    rules:
+      # Critical: Redis memory usage high
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "🚨 Redis memory usage critical: {{ $value | humanizePercentage }}"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} of maximum, exceeding 90% threshold"
+          runbook_url: "https://docs.qoderresume.com/runbooks/redis-memory-high"
+
+      # Warning: Redis connection issues
+      - alert: RedisConnectionIssues
+        expr: rate(redis_commands_total{status="error"}[5m]) > 0.01
+        for: 3m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "⚠️ Redis connection issues detected"
+          description: "Redis is experiencing {{ $value }} command failures per second"
+
+  # ===== QUEUE PROCESSING ALERTS =====
+  - name: queue_alerts
+    rules:
+      # Critical: Large queue backlog
+      - alert: QueueBacklogCritical
+        expr: queue_jobs_waiting > 100
+        for: 5m
+        labels:
+          severity: critical
+          service: queue
+        annotations:
+          summary: "🚨 Critical queue backlog: {{ $value }} jobs in {{ $labels.queue_name }}"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} waiting jobs, exceeding 100 job critical threshold"
+          runbook_url: "https://docs.qoderresume.com/runbooks/queue-backlog"
+
+      # Warning: Queue backlog building up
+      - alert: QueueBacklogWarning
+        expr: queue_jobs_waiting > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "⚠️ Queue backlog warning: {{ $value }} jobs in {{ $labels.queue_name }}"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} waiting jobs, exceeding 50 job warning threshold"
+
+      # Critical: Queue processing stopped
+      - alert: QueueProcessingStopped
+        expr: rate(queue_jobs_completed_total[10m]) == 0 and queue_jobs_waiting > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: queue
+        annotations:
+          summary: "🚨 Queue processing stopped for {{ $labels.queue_name }}"
+          description: "No jobs completed in the last 10 minutes for queue {{ $labels.queue_name }}, but {{ $value }} jobs are waiting"
+          runbook_url: "https://docs.qoderresume.com/runbooks/queue-processing-stopped"
+
+  # ===== AI SERVICE ALERTS =====
+  - name: ai_service_alerts
+    rules:
+      # Critical: High AI service error rate
+      - alert: AIServiceHighErrorRate
+        expr: rate(ai_requests_total{status="error"}[5m]) / rate(ai_requests_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: critical
+          service: ai
+        annotations:
+          summary: "🚨 High AI service error rate: {{ $value | humanizePercentage }}"
+          description: "AI service {{ $labels.provider }} has {{ $value | humanizePercentage }} error rate, exceeding 10% threshold"
+          runbook_url: "https://docs.qoderresume.com/runbooks/ai-service-errors"
+
+      # Warning: Slow AI responses
+      - alert: SlowAIResponses
+        expr: histogram_quantile(0.95, rate(ai_request_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: ai
+        annotations:
+          summary: "⚠️ Slow AI responses: {{ $value }}s"
+          description: "95th percentile AI response time is {{ $value }}s for {{ $labels.provider }}, exceeding 30 second threshold"
+
+      # Critical: AI service completely failing
+      - alert: AIServiceDown
+        expr: rate(ai_requests_total[5m]) == 0 and queue_jobs_waiting{queue_name=~".*analysis.*"} > 10
+        for: 3m
+        labels:
+          severity: critical
+          service: ai
+        annotations:
+          summary: "🚨 AI service appears to be down"
+          description: "No AI requests processed in the last 5 minutes, but analysis jobs are queued"
+          runbook_url: "https://docs.qoderresume.com/runbooks/ai-service-down"
+
+  # ===== SECURITY ALERTS =====
+  - name: security_alerts
+    rules:
+      # Critical: Multiple authentication failures
+      - alert: AuthenticationFailureSpike
+        expr: rate(auth_failures_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "🚨 Authentication failure spike: {{ $value }} failures/sec"
+          description: "Authentication failures are occurring at {{ $value }} per second, possible brute force attack"
+          runbook_url: "https://docs.qoderresume.com/runbooks/auth-failure-spike"
+
+      # Warning: Elevated authentication failures
+      - alert: ElevatedAuthenticationFailures
+        expr: rate(auth_failures_total[10m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "⚠️ Elevated authentication failures: {{ $value }} failures/sec"
+          description: "Authentication failures are elevated at {{ $value }} per second over 10 minutes"
+
+      # Critical: High application error rate
+      - alert: HighApplicationErrorRate
+        expr: rate(application_errors_total{severity="critical"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: application
+        annotations:
+          summary: "🚨 High critical application error rate"
+          description: "Critical application errors are occurring at {{ $value }} per second"
+          runbook_url: "https://docs.qoderresume.com/runbooks/application-errors"
+
+  # ===== BUSINESS METRIC ALERTS =====
+  - name: business_metrics
+    rules:
+      # Warning: Low resume upload rate (possible user experience issues)
+      - alert: LowResumeUploadRate
+        expr: rate(file_operations_total{operation="upload", status="success"}[1h]) < 0.01
+        for: 30m
+        labels:
+          severity: warning
+          service: business
+        annotations:
+          summary: "⚠️ Low resume upload rate"
+          description: "Resume uploads are occurring at only {{ $value }} per second over the last hour"
+
+      # Critical: No successful resume processing
+      - alert: NoResumeProcessing
+        expr: rate(queue_jobs_completed_total{queue_name="resume-analysis", status="success"}[30m]) == 0
+        for: 15m
+        labels:
+          severity: critical
+          service: business
+        annotations:
+          summary: "🚨 No successful resume processing"
+          description: "No resumes have been successfully processed in the last 30 minutes"
+          runbook_url: "https://docs.qoderresume.com/runbooks/no-resume-processing"

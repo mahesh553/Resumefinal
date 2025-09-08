@@ -1,34 +1,35 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
+  Entity,
   Index,
-} from 'typeorm';
-import { JobApplication } from './job-application.entity';
-import { UserSubscription } from './subscription.entity';
-import { Role } from './role.entity';
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { JobApplication } from "./job-application.entity";
+import { UserSubscription } from "./subscription.entity";
+// Import Role as type to avoid circular dependency
+import type { Role } from "./role.entity";
 
 export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
+  USER = "user",
+  ADMIN = "admin",
 }
 
 // Keep legacy enum for backward compatibility
 // New permission system uses Role entity
 
-@Entity('users')
-@Index(['email']) // For login queries
-@Index(['stripeCustomerId']) // For Stripe webhook processing
-@Index(['role']) // For admin queries
-@Index(['isActive']) // For filtering active users
-@Index(['createdAt']) // For user registration analytics
+@Entity("users")
+@Index(["email"]) // For login queries
+@Index(["stripeCustomerId"]) // For Stripe webhook processing
+@Index(["role"]) // For admin queries
+@Index(["isActive"]) // For filtering active users
+@Index(["createdAt"]) // For user registration analytics
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ unique: true })
@@ -44,21 +45,21 @@ export class User {
   passwordHash: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: UserRole,
     default: UserRole.USER,
   })
   role: UserRole;
 
   // New role-based permission system
-  @ManyToOne(() => Role, (role) => role.users, {
+  @ManyToOne("Role", (role: any) => role.users, {
     nullable: true,
     eager: false,
   })
-  @JoinColumn({ name: 'role_id' })
+  @JoinColumn({ name: "role_id" })
   roleEntity?: Role;
 
-  @Column({ name: 'role_id', nullable: true })
+  @Column({ name: "role_id", nullable: true })
   roleId?: string;
 
   @Column({ nullable: true })
@@ -79,7 +80,7 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany('Resume', (resume: any) => resume.user)
+  @OneToMany("Resume", (resume: any) => resume.user)
   resumes: any[];
 
   @OneToMany(() => JobApplication, (job) => job.user)
@@ -105,7 +106,10 @@ export class User {
 
   // Helper method to check if user is admin (legacy support)
   isAdmin(): boolean {
-    return this.role === UserRole.ADMIN || 
-           (this.roleEntity?.type === 'admin' || this.roleEntity?.type === 'super_admin');
+    return (
+      this.role === UserRole.ADMIN ||
+      this.roleEntity?.type === "admin" ||
+      this.roleEntity?.type === "super_admin"
+    );
   }
 }

@@ -1,0 +1,441 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "QoderResume Application Dashboard",
+    "tags": ["qoder-resume", "application", "business-metrics"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "1m",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "User Activity",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Active Sessions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "auth_attempts_total{status=\"success\"}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 100
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Login Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(auth_attempts_total{status=\"success\"}[5m]) / rate(auth_attempts_total[5m]) * 100",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 80
+                },
+                {
+                  "color": "green",
+                  "value": 95
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Failed Login Attempts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(auth_failures_total[5m])",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Registration Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{route=\"/api/auth/register\", status_code=\"201\"}[1h])",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        }
+      },
+      {
+        "id": 6,
+        "title": "Resume Processing",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 7
+        },
+        "collapsed": false
+      },
+      {
+        "id": 7,
+        "title": "Resume Uploads",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(file_operations_total{operation=\"upload\", status=\"success\"}[5m])",
+            "legendFormat": "Successful Uploads",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(file_operations_total{operation=\"upload\", status=\"error\"}[5m])",
+            "legendFormat": "Failed Uploads",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 8,
+        "title": "Resume Analysis Queue",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "queue_jobs_waiting{queue_name=\"resume-analysis\"}",
+            "legendFormat": "Waiting Jobs",
+            "refId": "A"
+          },
+          {
+            "expr": "queue_jobs_active{queue_name=\"resume-analysis\"}",
+            "legendFormat": "Processing Jobs",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 9,
+        "title": "Resume Analysis Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(queue_job_duration_seconds_bucket{queue_name=\"resume-analysis\"}[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(queue_job_duration_seconds_bucket{queue_name=\"resume-analysis\"}[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "File Size Distribution",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "rate(file_size_bytes_bucket[5m])",
+            "legendFormat": "{{le}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 11,
+        "title": "AI Provider Performance",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        },
+        "collapsed": false
+      },
+      {
+        "id": 12,
+        "title": "AI Provider Usage",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (provider) (rate(ai_requests_total[1h]))",
+            "legendFormat": "{{provider}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 25
+        }
+      },
+      {
+        "id": 13,
+        "title": "AI Response Times by Provider",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(ai_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{provider}} - 95th percentile",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 25
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "title": "AI Error Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(ai_requests_total{status=\"error\"}[5m]) / rate(ai_requests_total[5m]) * 100",
+            "legendFormat": "{{provider}} Error Rate",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 25
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 15,
+        "title": "Job Tracking",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 33
+        },
+        "collapsed": false
+      },
+      {
+        "id": 16,
+        "title": "Job Application Activity",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{route=~\"/api/job-tracker.*\", status_code=~\"2..\"}[5m])",
+            "legendFormat": "Job Tracker API Calls",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 34
+        }
+      },
+      {
+        "id": 17,
+        "title": "JD Matching Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "queue_jobs_waiting{queue_name=\"jd-matching\"}",
+            "legendFormat": "Waiting Jobs",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(queue_job_duration_seconds_bucket{queue_name=\"jd-matching\"}[5m]))",
+            "legendFormat": "95th percentile processing time",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 34
+        }
+      },
+      {
+        "id": 18,
+        "title": "Security Metrics",
+        "type": "row",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 42
+        },
+        "collapsed": false
+      },
+      {
+        "id": 19,
+        "title": "Authentication Failures by Reason",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(auth_failures_total[5m])",
+            "legendFormat": "{{reason}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 43
+        }
+      },
+      {
+        "id": 20,
+        "title": "Application Errors",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(application_errors_total[5m])",
+            "legendFormat": "{{error_type}} - {{severity}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 43
+        }
+      }
+    ]
+  }
+}

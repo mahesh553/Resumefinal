@@ -1,0 +1,108 @@
+groups:
+  - name: load_testing_alerts
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: rate(k6_http_reqs_total{status!~"2.."}[5m]) / rate(k6_http_reqs_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected during load testing"
+          description: "Error rate is {{ $value | humanizePercentage }} which is above 5% threshold"
+
+      # High Response Time Alert
+      - alert: HighResponseTime
+        expr: k6_http_req_duration{quantile="0.95"} > 2000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}ms which exceeds 2000ms threshold"
+
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.2f\" }}% which is above 80%"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | printf \"%.2f\" }}% which is above 85%"
+
+      # Database Alerts
+      - alert: DatabaseConnectionsHigh
+        expr: postgres_connections_active / postgres_connections_max > 0.8
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connections approaching limit"
+          description: "{{ $value | printf \"%.2f\" }}% of database connections are in use"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(postgres_queries_slow_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of slow database queries"
+          description: "{{ $value }} slow queries per second detected"
+
+      # Redis Alerts
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis memory usage critical"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} of maximum"
+
+      # Application Specific Alerts
+      - alert: QueueBacklogHigh
+        expr: bullmq_jobs_waiting > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High job queue backlog"
+          description: "{{ $value }} jobs waiting in queue"
+
+      - alert: AIServiceDown
+        expr: up{job="qoder-resume-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "QoderResume backend service is down"
+          description: "The main application service has been down for more than 1 minute"
+
+      # Load Testing Specific Alerts
+      - alert: LoadTestFailureRate
+        expr: rate(k6_checks_failed_total[5m]) / rate(k6_checks_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Load test check failure rate high"
+          description: "{{ $value | humanizePercentage }} of load test checks are failing"
+
+      - alert: VirtualUsersStuck
+        expr: k6_vus > 0 and rate(k6_http_reqs_total[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Virtual users appear to be stuck"
+          description: "{{ $value }} virtual users active but no requests being made"

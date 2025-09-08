@@ -1,25 +1,26 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
+  Entity,
   Index,
-} from 'typeorm';
-import { User } from './user.entity';
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
+// Import User as type to avoid circular dependency
+import type { User } from "./user.entity";
 
-@Entity('resumes')
-@Index(['userId']) // For user resume queries
-@Index(['userId', 'uploadedAt']) // For user resume history
-@Index(['atsScore']) // For filtering by ATS score
-@Index(['isProcessed']) // For processing queue queries
-@Index(['fileType']) // For filtering by file type
-@Index(['uploadedAt']) // For chronological sorting
+@Entity("resumes")
+@Index(["userId"]) // For user resume queries
+@Index(["userId", "uploadedAt"]) // For user resume history
+@Index(["atsScore"]) // For filtering by ATS score
+@Index(["isProcessed"]) // For processing queue queries
+@Index(["fileType"]) // For filtering by file type
+@Index(["uploadedAt"]) // For chronological sorting
 export class Resume {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -34,16 +35,16 @@ export class Resume {
   @Column()
   fileType: string;
 
-  @Column('text')
+  @Column("text")
   content: string;
 
-  @Column('jsonb', { nullable: true })
+  @Column("jsonb", { nullable: true })
   parsedContent: any;
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  @Column("decimal", { precision: 5, scale: 2, nullable: true })
   atsScore?: number;
 
-  @Column('jsonb', { default: [] })
+  @Column("jsonb", { default: [] })
   suggestions: any[];
 
   @Column({ default: false })
@@ -55,10 +56,10 @@ export class Resume {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.resumes, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne("User", (user: any) => user.resumes, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user: User;
 
-  @OneToMany('ResumeVersion', (version: any) => version.resume)
+  @OneToMany("ResumeVersion", (version: any) => version.resume)
   versions: any[];
 }
