@@ -6,7 +6,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "next-auth/react";
 import React from "react";
 import { toast } from "react-hot-toast";
@@ -166,10 +166,10 @@ export function Providers({ children }: ProvidersProps) {
               {children}
             </WebSocketProvider>
           </SessionProvider>
-          {/* Only show React Query Devtools in development */}
-          {process.env.NODE_ENV === "development" && (
+          {/* React Query Devtools temporarily disabled */}
+          {/* {process.env.NODE_ENV === "development" && (
             <ReactQueryDevtools initialIsOpen={false} />
-          )}
+          )} */}
         </QueryClientProvider>
       </NetworkProvider>
     </ErrorReportingProvider>

@@ -1,25 +1,36 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bars3Icon, 
-  XMarkIcon, 
+import { Button } from "@/components/ui/Button";
+import {
+  ArrowRightIcon,
+  Bars3Icon,
   SparklesIcon,
   UserIcon,
-  ArrowRightIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const navigation = [
-  { name: 'Features', href: '#features' },
-  { name: 'Pricing', href: '/pricing' },
-  { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
+  { name: "Features", href: "#features" },
+  { name: "Pricing", href: "/pricing" },
+  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleSignIn = () => {
+    router.push("/auth/login");
+  };
+
+  const handleGetStarted = () => {
+    router.push("/auth/register");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
@@ -27,19 +38,20 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <motion.a
-              href="/"
-              className="flex items-center gap-2"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-display font-bold gradient-text">
-                QoderResume
-              </span>
-            </motion.a>
+            <Link href="/" className="flex items-center gap-2">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <SparklesIcon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-display font-bold gradient-text">
+                  QoderResume
+                </span>
+              </motion.div>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -62,15 +74,12 @@ export function Header() {
             <Button
               variant="ghost"
               className="text-gray-700 hover:text-primary-600"
-              onClick={() => window.location.href = '/login'}
+              onClick={handleSignIn}
             >
               <UserIcon className="w-4 h-4 mr-2" />
               Sign In
             </Button>
-            <Button
-              className="button-primary"
-              onClick={() => window.location.href = '/dashboard'}
-            >
+            <Button className="button-primary" onClick={handleGetStarted}>
               Get Started
               <ArrowRightIcon className="w-4 h-4 ml-2" />
             </Button>
@@ -98,7 +107,7 @@ export function Header() {
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             className="md:hidden bg-white border-t border-gray-200"
@@ -122,7 +131,7 @@ export function Header() {
                   className="w-full justify-center"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    window.location.href = '/login';
+                    handleSignIn();
                   }}
                 >
                   <UserIcon className="w-4 h-4 mr-2" />
@@ -133,7 +142,7 @@ export function Header() {
                   className="w-full justify-center button-primary"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    window.location.href = '/dashboard';
+                    handleGetStarted();
                   }}
                 >
                   Get Started

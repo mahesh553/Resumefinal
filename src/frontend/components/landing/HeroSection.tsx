@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ChevronRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { Button } from "@/components/ui/Button";
+import { ChevronRightIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
 
 export function HeroSection() {
   return (
@@ -12,29 +12,41 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="absolute inset-0 bg-grid-slate-100/50 bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
       </div>
-      
+
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-64 h-64 bg-gradient-to-br from-primary-200/20 to-blue-200/20 rounded-full blur-3xl"
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -100, 0],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 20 + i * 5,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
+        {[...Array(6)].map((_, i) => {
+          // Use deterministic positions to avoid hydration mismatches
+          const positions = [
+            { left: "10%", top: "20%" },
+            { left: "85%", top: "15%" },
+            { left: "25%", top: "70%" },
+            { left: "75%", top: "65%" },
+            { left: "5%", top: "85%" },
+            { left: "90%", top: "80%" },
+          ];
+
+          return (
+            <motion.div
+              key={i}
+              className="absolute w-64 h-64 bg-gradient-to-br from-primary-200/20 to-blue-200/20 rounded-full blur-3xl"
+              animate={{
+                x: [0, 100, 0],
+                y: [0, -100, 0],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 20 + i * 5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              style={{
+                left: positions[i]?.left || "50%",
+                top: positions[i]?.top || "50%",
+              }}
+            />
+          );
+        })}
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -70,7 +82,8 @@ export function HeroSection() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="max-w-2xl mx-auto text-xl md:text-2xl text-gray-600 leading-relaxed"
           >
-            Get your resume optimized by AI, track job applications, and land your dream job with personalized insights and recommendations.
+            Get your resume optimized by AI, track job applications, and land
+            your dream job with personalized insights and recommendations.
           </motion.p>
 
           {/* Stats */}
@@ -110,7 +123,7 @@ export function HeroSection() {
             <Button
               size="lg"
               className="button-primary group"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => (window.location.href = "/dashboard")}
             >
               Start Optimizing Now
               <ChevronRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -119,7 +132,7 @@ export function HeroSection() {
               variant="secondary"
               size="lg"
               className="button-secondary"
-              onClick={() => window.location.href = '/demo'}
+              onClick={() => (window.location.href = "/demo")}
             >
               See Demo
             </Button>
