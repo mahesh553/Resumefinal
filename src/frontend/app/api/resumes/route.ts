@@ -4,7 +4,7 @@ export async function GET(request: NextRequest) {
   try {
     // Make request to backend API to get user's resumes
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
     const response = await fetch(`${backendUrl}/resumes`, {
       method: "GET",
       headers: {

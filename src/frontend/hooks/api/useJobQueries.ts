@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 
 // Query Keys
@@ -61,6 +62,8 @@ export function useJobDetail(jobId: string) {
 
 // Job Stats Query
 export function useJobStats() {
+  const { data: session, status } = useSession();
+
   return useQuery({
     queryKey: jobKeys.stats(),
     queryFn: async () => {
@@ -72,7 +75,18 @@ export function useJobStats() {
       }
       return result.data;
     },
+    enabled: status === "authenticated" && !!session?.accessToken,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry authentication errors
+      if (
+        error.message.includes("Unauthorized") ||
+        error.message.includes("authentication")
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 }
 
@@ -97,9 +111,28 @@ export function useCreateJob() {
     }) => {
       const result = await apiClient.createJob(jobData);
       if (result.error) {
-        throw new Error(
-          typeof result.error === "string" ? result.error : result.error.message
-        );
+        // Check if it's an authentication error
+        const isAuthError =
+          (typeof result.error === "object" &&
+            (result.error.code === "UNAUTHORIZED" ||
+              result.error.statusCode === 401)) ||
+          (typeof result.error === "string" &&
+            (result.error.includes("Unauthorized") ||
+              result.error.includes("Session expired") ||
+              result.error.includes("Authentication required")));
+
+        if (isAuthError) {
+          // Redirect to login for authentication errors
+          window.location.href = "/auth/login?redirect=/dashboard";
+          throw new Error("Please log in to add job applications");
+        }
+
+        // Extract error message for other errors
+        const errorMessage =
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message;
+        throw new Error(errorMessage);
       }
       return result.data;
     },
@@ -110,7 +143,20 @@ export function useCreateJob() {
       queryClient.invalidateQueries({ queryKey: jobKeys.stats() });
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to add job application");
+      // Check if this is an authentication error
+      if (
+        error.message.includes("Please log in to add job applications") ||
+        error.message.includes("Authentication required") ||
+        error.message.includes("Session expired") ||
+        error.message.includes("Unauthorized")
+      ) {
+        toast.error("Please log in to add job applications", {
+          id: "auth-error-job-create",
+          duration: 3000, // Shorter duration since we're redirecting
+        });
+      } else {
+        toast.error(error.message || "Failed to add job application");
+      }
     },
   });
 }

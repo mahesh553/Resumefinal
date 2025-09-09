@@ -1,25 +1,15 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GeminiProvider } from './providers/gemini.provider';
-import { OpenAIProvider } from './providers/openai.provider';
-import { ClaudeProvider } from './providers/claude.provider';
-import { AIProviderService } from './services/ai-provider.service';
-import Redis from 'ioredis';
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { RedisService } from "../../config/redis.service";
+import { ClaudeProvider } from "./providers/claude.provider";
+import { GeminiProvider } from "./providers/gemini.provider";
+import { OpenAIProvider } from "./providers/openai.provider";
+import { AIProviderService } from "./services/ai-provider.service";
 
 @Module({
   imports: [ConfigModule],
   providers: [
-    {
-      provide: 'REDIS',
-      useFactory: (configService: ConfigService) => {
-        return new Redis({
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get('REDIS_PORT', 6379),
-          password: configService.get('REDIS_PASSWORD'),
-        });
-      },
-      inject: [ConfigService],
-    },
+    RedisService,
     GeminiProvider,
     OpenAIProvider,
     ClaudeProvider,
@@ -27,22 +17,28 @@ import Redis from 'ioredis';
       provide: AIProviderService,
       useFactory: (
         configService: ConfigService,
-        redis: Redis,
+        redisService: RedisService,
         geminiProvider: GeminiProvider,
         openaiProvider: OpenAIProvider,
-        claudeProvider: ClaudeProvider,
+        claudeProvider: ClaudeProvider
       ) => {
         return new AIProviderService(
           configService,
-          redis,
+          redisService,
           geminiProvider,
           openaiProvider,
-          claudeProvider,
+          claudeProvider
         );
       },
-      inject: [ConfigService, 'REDIS', GeminiProvider, OpenAIProvider, ClaudeProvider],
+      inject: [
+        ConfigService,
+        RedisService,
+        GeminiProvider,
+        OpenAIProvider,
+        ClaudeProvider,
+      ],
     },
   ],
-  exports: [AIProviderService],
+  exports: [AIProviderService, RedisService],
 })
 export class AIModule {}

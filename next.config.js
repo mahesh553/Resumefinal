@@ -38,20 +38,25 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: "http://localhost:3001/api/:path*", // NestJS backend
+        source: "/api/backend/:path*",
+        destination: "http://localhost:3002/api/:path*",
+      },
+      // Proxy all API routes EXCEPT NextAuth routes to the backend
+      {
+        source: "/api/((?!auth).*)",
+        destination: "http://localhost:3002/api/$1",
       },
       {
         source: "/socket.io/:path*",
-        destination: "http://localhost:3001/socket.io/:path*", // WebSocket
+        destination: "http://localhost:3002/socket.io/:path*",
       },
     ];
   },
   env: {
     NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002",
     NEXT_PUBLIC_WS_URL:
-      process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3001",
+      process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3002",
   },
   images: {
     domains: ["localhost"],

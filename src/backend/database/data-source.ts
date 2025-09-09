@@ -4,6 +4,19 @@ import * as entities from "./entities";
 
 export const createDataSource = (configService: ConfigService) => {
   const databaseUrl = configService.get("DATABASE_URL");
+  const isSupabase = databaseUrl?.includes("supabase.co");
+  const dbSynchronize = configService.get<string>("DB_SYNCHRONIZE");
+
+  // Determine synchronization strategy
+  let shouldSynchronize = false;
+  if (dbSynchronize !== undefined) {
+    // Explicit control via DB_SYNCHRONIZE environment variable
+    shouldSynchronize = dbSynchronize === "true";
+  } else {
+    // Default behavior: only sync in development and not with Supabase
+    shouldSynchronize =
+      configService.get("NODE_ENV") === "development" && !isSupabase;
+  }
 
   // If DATABASE_URL is provided, use it (for Supabase/production)
   if (databaseUrl) {
@@ -12,10 +25,10 @@ export const createDataSource = (configService: ConfigService) => {
       url: databaseUrl,
       entities: Object.values(entities),
       migrations: [__dirname + "/migrations/*.{ts,js}"],
-      synchronize: configService.get("NODE_ENV") === "development",
+      synchronize: shouldSynchronize,
       logging: configService.get("NODE_ENV") === "development",
       ssl:
-        configService.get("NODE_ENV") === "production"
+        isSupabase || configService.get("NODE_ENV") === "production"
           ? { rejectUnauthorized: false }
           : false,
     });
@@ -36,10 +49,10 @@ export const createDataSource = (configService: ConfigService) => {
       configService.get("DATABASE_NAME") || configService.get("DB_NAME"),
     entities: Object.values(entities),
     migrations: [__dirname + "/migrations/*.{ts,js}"],
-    synchronize: configService.get("NODE_ENV") === "development",
+    synchronize: shouldSynchronize,
     logging: configService.get("NODE_ENV") === "development",
     ssl:
-      configService.get("NODE_ENV") === "production"
+      isSupabase || configService.get("NODE_ENV") === "production"
         ? { rejectUnauthorized: false }
         : false,
   });

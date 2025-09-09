@@ -15,28 +15,32 @@
 QoderResume is a full-stack application with Next.js frontend and NestJS backend, designed for flexible deployment across various environments.
 
 ### **Architecture Summary**
+
 ```
 Frontend (Next.js:3000) ←→ Backend (NestJS:3001) ←→ External Services (AI/DB)
 ```
 
 ### **Deployment Targets**
+
 - **Development**: Local with hot reload
-- **Staging**: Production-like testing environment  
+- **Staging**: Production-like testing environment
 - **Production**: High-availability with monitoring
 
 ## ⚙️ Environment Setup
 
 ### **Prerequisites**
+
 - Node.js 18+ (LTS recommended)
 - Docker 20+ and Docker Compose 2+
 - PostgreSQL 15+ and Redis 7+
 - AI Provider API keys (Gemini, OpenAI, Claude)
 
 ### **Core Environment Variables**
+
 ```bash
 # Application
 NODE_ENV=production
-PORT=3001
+PORT=3002
 FRONTEND_PORT=3000
 
 # Database
@@ -82,6 +86,7 @@ UPLOAD_DESTINATION=uploads
 ### **Environment-Specific Overrides**
 
 **Development (.env.development)**
+
 ```bash
 NODE_ENV=development
 LOG_LEVEL=debug
@@ -90,6 +95,7 @@ CORS_ORIGIN=http://localhost:3000
 ```
 
 **Production (.env.production)**
+
 ```bash
 NODE_ENV=production
 LOG_LEVEL=warn
@@ -101,6 +107,7 @@ AI_CACHE_TTL=86400  # 24 hours for cost optimization
 ### **Method 1: Docker Deployment (Recommended)**
 
 #### **Quick Setup**
+
 ```bash
 # Clone and configure
 git clone https://github.com/yourusername/qoder-resume.git
@@ -117,9 +124,10 @@ docker-compose ps
 ```
 
 #### **Docker Compose Configuration**
+
 ```yaml
 # infrastructure/docker/docker-compose.yml
-version: '3.8'
+version: "3.8"
 services:
   app:
     build:
@@ -161,6 +169,7 @@ volumes:
 ### **Method 2: Manual VPS Deployment**
 
 #### **Server Setup**
+
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -185,6 +194,7 @@ sudo apt install redis-server
 ```
 
 #### **Application Deployment**
+
 ```bash
 # Deploy application
 git clone https://github.com/yourusername/qoder-resume.git
@@ -201,25 +211,26 @@ pm2 startup
 ```
 
 #### **PM2 Configuration**
+
 ```javascript
 // ecosystem.config.js
 module.exports = {
   apps: [
     {
-      name: 'qoder-resume-backend',
-      script: 'dist/src/backend/main.js',
-      env: { NODE_ENV: 'production', PORT: 3001 },
+      name: "qoder-resume-backend",
+      script: "dist/src/backend/main.js",
+      env: { NODE_ENV: "production", PORT: 3001 },
       instances: 2,
-      exec_mode: 'cluster',
-      max_memory_restart: '1G',
+      exec_mode: "cluster",
+      max_memory_restart: "1G",
     },
     {
-      name: 'qoder-resume-frontend',
-      script: 'npm',
-      args: 'start',
-      env: { NODE_ENV: 'production', PORT: 3000 },
+      name: "qoder-resume-frontend",
+      script: "npm",
+      args: "start",
+      env: { NODE_ENV: "production", PORT: 3000 },
       instances: 1,
-      max_memory_restart: '512M',
+      max_memory_restart: "512M",
     },
   ],
 };
@@ -228,6 +239,7 @@ module.exports = {
 ### **Method 3: Cloud Platform Deployment**
 
 #### **Vercel (Frontend)**
+
 ```bash
 npm i -g vercel
 vercel login
@@ -236,6 +248,7 @@ vercel --prod
 ```
 
 #### **Railway**
+
 ```bash
 npm install -g @railway/cli
 railway login
@@ -244,6 +257,7 @@ railway up
 ```
 
 #### **Heroku**
+
 ```bash
 heroku create qoder-resume-app
 heroku addons:create heroku-postgresql:hobby-dev
@@ -255,6 +269,7 @@ git push heroku main
 ## 🔌 API Integration Guide
 
 ### **Authentication Flow**
+
 ```mermaid
 sequenceDiagram
     participant C as Client
@@ -266,7 +281,7 @@ sequenceDiagram
     A->>D: Validate credentials
     A->>R: Store session
     A-->>C: JWT + Refresh token
-    
+
     C->>A: API call with JWT
     A->>A: Validate JWT
     A-->>C: Response data
@@ -277,6 +292,7 @@ sequenceDiagram
 #### **Authentication**
 
 **POST /api/auth/register**
+
 ```typescript
 interface RegisterRequest {
   firstName: string;
@@ -298,6 +314,7 @@ curl -X POST http://localhost:3001/api/auth/register \
 ```
 
 **POST /api/auth/login**
+
 ```typescript
 interface LoginRequest {
   email: string;
@@ -319,6 +336,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 #### **Resume Management**
 
 **POST /api/resumes/upload**
+
 ```typescript
 interface UploadResponse {
   id: string;
@@ -337,6 +355,7 @@ curl -X POST http://localhost:3001/api/resumes/upload \
 ```
 
 **GET /api/resumes/:id/analysis**
+
 ```typescript
 interface AnalysisResponse {
   id: string;
@@ -356,6 +375,7 @@ curl -X GET http://localhost:3001/api/resumes/123/analysis \
 #### **Job Description Matching**
 
 **POST /api/analysis/job-match**
+
 ```typescript
 interface JobMatchRequest {
   resumeId: string;
@@ -386,11 +406,12 @@ curl -X POST http://localhost:3001/api/analysis/job-match \
 #### **Job Application Tracking**
 
 **GET /api/jobs**
+
 ```typescript
 interface JobQuery {
   page?: number;
   limit?: number;
-  status?: 'applied' | 'interview' | 'offer' | 'rejected';
+  status?: "applied" | "interview" | "offer" | "rejected";
   companyName?: string;
   position?: string;
 }
@@ -403,6 +424,7 @@ interface JobListResponse {
 ```
 
 **POST /api/jobs**
+
 ```typescript
 interface CreateJobRequest {
   companyName: string;
@@ -417,6 +439,7 @@ interface CreateJobRequest {
 ```
 
 **PUT /api/jobs/:id**
+
 ```typescript
 interface UpdateJobRequest {
   status?: JobStatus;
@@ -435,13 +458,23 @@ curl -X PUT http://localhost:3001/api/jobs/123 \
 #### **Analytics**
 
 **GET /api/analytics/overview**
+
 ```typescript
 interface AnalyticsOverview {
   totalResumes: number;
   averageAtsScore: number;
   totalApplications: number;
-  applicationStats: { applied: number; interviews: number; offers: number; rejected: number };
-  trends: { atsScoreImprovement: number; responseRate: number; interviewRate: number };
+  applicationStats: {
+    applied: number;
+    interviews: number;
+    offers: number;
+    rejected: number;
+  };
+  trends: {
+    atsScoreImprovement: number;
+    responseRate: number;
+    interviewRate: number;
+  };
   recommendations: RecommendationItem[];
 }
 ```
@@ -449,15 +482,16 @@ interface AnalyticsOverview {
 ### **Authentication Integration**
 
 #### **JWT Token Management**
+
 ```typescript
 class AuthService {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
 
   async login(email: string, password: string) {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
@@ -466,15 +500,15 @@ class AuthService {
       this.setTokens(data.access_token, data.refresh_token);
       return data.user;
     }
-    throw new Error('Login failed');
+    throw new Error("Login failed");
   }
 
   async refreshTokens() {
-    if (!this.refreshToken) throw new Error('No refresh token');
+    if (!this.refreshToken) throw new Error("No refresh token");
 
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: this.refreshToken }),
     });
 
@@ -489,20 +523,21 @@ class AuthService {
   private setTokens(accessToken: string, refreshToken: string) {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem("access_token", accessToken);
+    localStorage.setItem("refresh_token", refreshToken);
   }
 
   getAuthHeaders() {
     return {
       Authorization: `Bearer ${this.accessToken}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
   }
 }
 ```
 
 #### **API Client with Auto Token Refresh**
+
 ```typescript
 class APIClient {
   constructor(private authService: AuthService) {}
@@ -527,7 +562,7 @@ class APIClient {
           },
         });
       }
-      throw new Error('Authentication failed');
+      throw new Error("Authentication failed");
     }
 
     return response;
@@ -538,6 +573,7 @@ class APIClient {
 ### **Rate Limiting**
 
 #### **Backend Rate Limiting**
+
 ```typescript
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -562,6 +598,7 @@ async register(@Body() registerDto: RegisterDto) {}
 ```
 
 #### **Error Response Format**
+
 ```typescript
 interface APIError {
   success: false;
@@ -591,16 +628,20 @@ interface APIError {
 ## 🔧 Configuration Management
 
 ### **Database Configuration**
+
 ```typescript
 // TypeORM Configuration
 export const databaseConfig: TypeOrmModuleOptions = {
-  type: 'postgres',
+  type: "postgres",
   url: process.env.DATABASE_URL,
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-  synchronize: process.env.NODE_ENV === 'development',
-  logging: process.env.NODE_ENV === 'development',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  entities: [__dirname + "/../**/*.entity{.ts,.js}"],
+  migrations: [__dirname + "/../database/migrations/*{.ts,.js}"],
+  synchronize: process.env.NODE_ENV === "development",
+  logging: process.env.NODE_ENV === "development",
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
   extra: {
     connectionLimit: 20,
     acquireTimeout: 60000,
@@ -610,10 +651,11 @@ export const databaseConfig: TypeOrmModuleOptions = {
 ```
 
 ### **Redis Configuration**
+
 ```typescript
 export const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
+  host: process.env.REDIS_HOST || "localhost",
+  port: parseInt(process.env.REDIS_PORT || "6379"),
   password: process.env.REDIS_PASSWORD,
   retryDelayOnFailover: 100,
   enableReadyCheck: false,
@@ -623,35 +665,36 @@ export const redisConfig = {
 ```
 
 ### **AI Provider Configuration**
+
 ```typescript
 export const aiProvidersConfig = [
   {
-    name: 'gemini',
+    name: "gemini",
     priority: 1,
     enabled: !!process.env.GEMINI_API_KEY,
     config: {
       apiKey: process.env.GEMINI_API_KEY,
-      model: 'gemini-2.0-flash',
+      model: "gemini-2.0-flash",
       timeout: 60000,
     },
   },
   {
-    name: 'openai',
+    name: "openai",
     priority: 2,
     enabled: !!process.env.OPENAI_API_KEY,
     config: {
       apiKey: process.env.OPENAI_API_KEY,
-      model: 'gpt-4',
+      model: "gpt-4",
       timeout: 45000,
     },
   },
   {
-    name: 'claude',
+    name: "claude",
     priority: 3,
     enabled: !!process.env.ANTHROPIC_API_KEY,
     config: {
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: 'claude-3-sonnet-20240229',
+      model: "claude-3-sonnet-20240229",
       timeout: 45000,
     },
   },
@@ -661,6 +704,7 @@ export const aiProvidersConfig = [
 ## 🚀 Production Optimization
 
 ### **Database Optimization**
+
 ```sql
 -- Essential indexes for performance
 CREATE INDEX CONCURRENTLY idx_resumes_user_id ON resumes(user_id);
@@ -675,37 +719,41 @@ CREATE INDEX CONCURRENTLY idx_active_applications ON job_applications(status) WH
 ```
 
 ### **Security Configuration**
+
 ```typescript
 // Helmet security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // CORS configuration
 app.enableCors({
-  origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:3000",
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 });
 ```
 
 ### **Nginx Configuration**
+
 ```nginx
 # infrastructure/nginx/nginx.conf
-upstream backend { server app:3001; }
+upstream backend { server app:3002; }
 upstream frontend { server app:3000; }
 
 server {
@@ -717,10 +765,10 @@ server {
 server {
     listen 443 ssl http2;
     server_name yourdomain.com;
-    
+
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
-    
+
     # API requests
     location /api/ {
         proxy_pass http://backend;
@@ -729,7 +777,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-    
+
     # Frontend requests
     location / {
         proxy_pass http://frontend;
@@ -744,13 +792,14 @@ server {
 ## 📊 Monitoring and Troubleshooting
 
 ### **Health Check Endpoints**
+
 ```typescript
-@Controller('health')
+@Controller("health")
 export class HealthController {
   @Get()
   async check() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       services: {
         database: await this.checkDatabase(),
@@ -765,6 +814,7 @@ export class HealthController {
 ### **Common Issues and Solutions**
 
 #### **Database Connection Issues**
+
 ```bash
 # Check PostgreSQL status
 sudo systemctl status postgresql
@@ -777,6 +827,7 @@ SELECT * FROM pg_stat_activity WHERE datname = 'qoder_resume';
 ```
 
 #### **Redis Connection Issues**
+
 ```bash
 # Check Redis status
 redis-cli ping
@@ -789,6 +840,7 @@ tail -f /var/log/redis/redis-server.log
 ```
 
 #### **AI Provider Issues**
+
 ```bash
 # Test API connectivity
 curl -H "Authorization: Bearer ${GEMINI_API_KEY}" \
@@ -799,6 +851,7 @@ curl -H "Authorization: Bearer ${GEMINI_API_KEY}" \
 ```
 
 #### **Application Logs**
+
 ```bash
 # View PM2 logs
 pm2 logs qoder-resume-backend
@@ -814,13 +867,15 @@ tail -f logs/application.log
 ### **Deployment Checklist**
 
 #### **Pre-Deployment**
+
 - [ ] Environment variables configured
-- [ ] Database migrations applied  
+- [ ] Database migrations applied
 - [ ] SSL certificates installed
 - [ ] AI provider API keys validated
 - [ ] Security configurations verified
 
 #### **Post-Deployment**
+
 - [ ] Health checks passing
 - [ ] Authentication working
 - [ ] File upload functional
@@ -829,6 +884,7 @@ tail -f logs/application.log
 - [ ] Redis cache operational
 
 #### **Performance Verification**
+
 - [ ] Response times < 3s
 - [ ] Error rates < 1%
 - [ ] Database queries optimized

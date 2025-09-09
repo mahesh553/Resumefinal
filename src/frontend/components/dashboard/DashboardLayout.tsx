@@ -4,10 +4,10 @@ import { AdvancedFileUpload } from "@/components/ui/AdvancedFileUpload";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { useUserStats, useJobStats } from "@/hooks/api";
+import { useJobStats, useUserStats } from "@/hooks/api";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   FiBarChart,
   FiBell,
@@ -32,10 +32,53 @@ export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // React Query hooks for dashboard data
+  // React Query hooks for dashboard data - Always call them
   const { data: userStats, isLoading: isLoadingUserStats } = useUserStats();
   const { data: jobStats, isLoading: isLoadingJobStats } = useJobStats();
 
+  // Dynamic stats from React Query data - Always compute this
+  const stats = useMemo(
+    () => [
+      {
+        label: "Resumes Analyzed",
+        value: userStats?.totalResumes?.toString() || "0",
+        change: "+3 this week",
+        color: "text-blue-600",
+      },
+      {
+        label: "Average ATS Score",
+        value: userStats?.averageScore
+          ? `${Math.round(userStats.averageScore)}%`
+          : "0%",
+        change: "+5% improvement",
+        color: "text-green-600",
+      },
+      {
+        label: "Job Applications",
+        value:
+          userStats?.totalJobs?.toString() ||
+          (jobStats?.statusCounts
+            ? Object.values(jobStats.statusCounts)
+                .reduce((a: number, b: number) => a + b, 0)
+                .toString()
+            : "0"),
+        change: "+8 this month",
+        color: "text-purple-600",
+      },
+      {
+        label: "Interview Calls",
+        value:
+          userStats?.interviewCalls?.toString() ||
+          jobStats?.statusCounts?.interview_scheduled?.toString() ||
+          "0",
+        change: "+2 this week",
+        color: "text-orange-600",
+      },
+    ],
+    [userStats, jobStats]
+  );
+
+  // Check loading state after all hooks are called
   if (status === "loading" || isLoadingUserStats || isLoadingJobStats) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -53,34 +96,6 @@ export function DashboardLayout() {
     { id: "jobs", label: "Job Tracker", icon: FiClock },
     { id: "settings", label: "Settings", icon: FiSettings },
   ];
-
-  // Dynamic stats from React Query data
-  const stats = useMemo(() => [
-    {
-      label: "Resumes Analyzed",
-      value: userStats?.totalResumes?.toString() || "0",
-      change: "+3 this week",
-      color: "text-blue-600",
-    },
-    {
-      label: "Average ATS Score",
-      value: userStats?.averageScore ? `${Math.round(userStats.averageScore)}%` : "0%",
-      change: "+5% improvement",
-      color: "text-green-600",
-    },
-    {
-      label: "Job Applications",
-      value: userStats?.totalJobs?.toString() || (jobStats?.statusCounts ? Object.values(jobStats.statusCounts).reduce((a: number, b: number) => a + b, 0).toString() : "0"),
-      change: "+8 this month",
-      color: "text-purple-600",
-    },
-    {
-      label: "Interview Calls",
-      value: userStats?.interviewCalls?.toString() || jobStats?.statusCounts?.interview_scheduled?.toString() || "0",
-      change: "+2 this week",
-      color: "text-orange-600",
-    },
-  ], [userStats, jobStats]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

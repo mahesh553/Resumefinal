@@ -2,7 +2,7 @@ import { getSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002/api";
 
 // Enhanced error types
 export interface ApiError {
@@ -51,16 +51,30 @@ class EnhancedApiClient {
   }
 
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const session = await getSession();
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+    try {
+      const session = await getSession();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
 
-    if (session?.accessToken) {
-      headers.Authorization = `Bearer ${session.accessToken}`;
+      // Check for session errors first
+      if (session?.error) {
+        console.warn("Session has error:", session.error);
+        // Don't include auth header if session has errors
+        return headers;
+      }
+
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      return headers;
+    } catch (error) {
+      console.error("Error getting session:", error);
+      return {
+        "Content-Type": "application/json",
+      };
     }
-
-    return headers;
   }
 
   private isNetworkError(error: any): boolean {
@@ -357,12 +371,13 @@ class EnhancedApiClient {
       const allowedTypes = [
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
         "text/plain",
       ];
       if (!allowedTypes.includes(file.type)) {
         const error: ApiError = {
           code: "INVALID_FILE_TYPE",
-          message: "Only PDF, DOCX, and TXT files are allowed",
+          message: "Only PDF, DOCX, DOC, and TXT files are allowed",
           retryable: false,
         };
         return { error, success: false };
@@ -586,6 +601,7 @@ class EnhancedApiClient {
       method: "POST",
       body: JSON.stringify(jobData),
       retry: { maxRetries: 1 },
+      skipErrorToast: true, // Let the mutation handle error display
     });
   }
 

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface AnimatedCounterProps {
   end: number;
@@ -11,16 +11,23 @@ interface AnimatedCounterProps {
   prefix?: string;
 }
 
-export function AnimatedCounter({ 
-  end, 
-  start = 0, 
-  duration = 2, 
-  suffix = '', 
-  prefix = '' 
+export function AnimatedCounter({
+  end,
+  start = 0,
+  duration = 2,
+  suffix = "",
+  prefix = "",
 }: AnimatedCounterProps) {
   const [count, setCount] = useState(start);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     let startTime: number;
     let animationFrame: number;
 
@@ -44,15 +51,17 @@ export function AnimatedCounter({
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [end, start, duration]);
+  }, [end, start, duration, isMounted]);
 
   return (
     <motion.span
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={false}
+      animate={isMounted ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
+      transition={{ duration: isMounted ? 0.5 : 0 }}
     >
-      {prefix}{count.toLocaleString()}{suffix}
+      {prefix}
+      {count.toLocaleString()}
+      {suffix}
     </motion.span>
   );
 }

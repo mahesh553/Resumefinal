@@ -131,8 +131,8 @@ echo    npm run lint         - Check code quality
 echo    npm run db:health    - Check database health
 echo.
 echo 📚 Documentation:
-echo    - API Docs: http://localhost:3001/api/docs
-echo    - Health Check: http://localhost:3001/health
+echo    - API Docs: http://localhost:3002/api/docs
+echo    - Health Check: http://localhost:3002/health
 echo.
 
 pause

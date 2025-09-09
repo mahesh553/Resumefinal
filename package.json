@@ -4,14 +4,14 @@
   "description": "AI-powered resume optimization platform - Monolith Architecture",
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "next dev -p 3000",
+    "dev:frontend": "cd src/frontend && next dev -p 3000",
     "dev:backend": "nest start --watch",
     "build": "npm run build:frontend && npm run build:backend",
-    "build:frontend": "next build",
+    "build:frontend": "cd src/frontend && next build",
     "build:backend": "nest build",
     "build:check": "npm run build:frontend",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
-    "start:frontend": "next start -p 3000",
+    "start:frontend": "cd src/frontend && next start -p 3000",
     "start:backend": "node dist/main",
     "test": "jest",
     "test:backend": "jest --config=jest.config.json",
@@ -36,7 +36,9 @@
     "schema:sync": "typeorm-ts-node-commonjs schema:sync -d src/backend/database/migration-data-source.ts",
     "schema:drop": "typeorm-ts-node-commonjs schema:drop -d src/backend/database/migration-data-source.ts",
     "db:optimize": "node scripts/db-optimize.js",
-    "db:health": "node scripts/db-optimize.js"
+    "db:health": "node scripts/db-optimize.js",
+    "test:redis": "node scripts/test-redis.js",
+    "test:redis:native": "node scripts/test-redis-native.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.7.0",
@@ -111,6 +113,9 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@playwright/test": "^1.40.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tanstack/react-query-devtools": "^5.87.3",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

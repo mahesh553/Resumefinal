@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Configuration
-const BASE_URL = process.env.BACKEND_URL || "http://localhost:3001";
+const BASE_URL = process.env.BACKEND_URL || "http://localhost:3002";
 const CONCURRENT_USERS = parseInt(process.env.CONCURRENT_USERS) || 10;
 const TEST_DURATION = parseInt(process.env.TEST_DURATION) || 300; // 5 minutes in seconds
 const REPORTS_DIR = path.join(__dirname, "reports", "results");

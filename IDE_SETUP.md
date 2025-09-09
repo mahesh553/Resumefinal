@@ -21,6 +21,7 @@ This document provides comprehensive setup instructions for the QoderResume deve
 ## 🛠️ Prerequisites
 
 ### System Requirements
+
 - **OS**: Windows 10/11, macOS 10.15+, or Ubuntu 18.04+
 - **RAM**: Minimum 8GB, Recommended 16GB+
 - **Storage**: 10GB+ free space
@@ -29,9 +30,11 @@ This document provides comprehensive setup instructions for the QoderResume deve
 ### Core Software Installation
 
 #### 1. Node.js & npm
+
 **Required Version**: Node.js 18+ with compatible npm
 
 **Installation**:
+
 ```bash
 # Download from official website
 https://nodejs.org/
@@ -42,6 +45,7 @@ npm --version   # Should show compatible version
 ```
 
 **Alternative (using nvm)**:
+
 ```bash
 # Windows (using nvm-windows)
 nvm install 18.17.0
@@ -54,6 +58,7 @@ nvm use 18.17.0
 ```
 
 #### 2. Git
+
 ```bash
 # Download from official website
 https://git-scm.com/
@@ -63,6 +68,7 @@ git --version
 ```
 
 #### 3. Docker & Docker Compose
+
 **Required for**: Database, Redis, and containerized deployment
 
 ```bash
@@ -79,6 +85,7 @@ docker-compose --version
 ### Visual Studio Code (Recommended)
 
 #### Essential Extensions
+
 Install these extensions for optimal development experience:
 
 ```json
@@ -88,32 +95,32 @@ Install these extensions for optimal development experience:
     "ms-vscode.vscode-typescript-next",
     "bradlc.vscode-tailwindcss",
     "ms-vscode.vscode-json",
-    
+
     // Framework Support
     "ms-vscode.vscode-eslint",
     "esbenp.prettier-vscode",
     "formulahendry.auto-rename-tag",
     "bradlc.vscode-tailwindcss",
-    
+
     // Database & DevOps
     "ms-vscode.vscode-docker",
     "ckolkman.vscode-postgres",
     "bradlc.vscode-tailwindcss",
-    
+
     // Productivity
     "christian-kohler.path-intellisense",
     "formulahendry.auto-close-tag",
     "ms-vscode.vscode-todo-highlight",
     "gruntfuggly.todo-tree",
-    
+
     // Git Integration
     "mhutchie.git-graph",
     "eamodio.gitlens",
-    
+
     // API Development
     "humao.rest-client",
     "ms-vscode.vscode-thunder-client",
-    
+
     // AI & Development Assistant
     "github.copilot",
     "github.copilot-chat"
@@ -122,6 +129,7 @@ Install these extensions for optimal development experience:
 ```
 
 #### VS Code Settings
+
 Create `.vscode/settings.json` in project root:
 
 ```json
@@ -158,12 +166,14 @@ Create `.vscode/settings.json` in project root:
 ### Alternative IDEs
 
 #### WebStorm
+
 - Install Node.js plugin
 - Enable TypeScript support
 - Configure Tailwind CSS intelligence
 - Set up ESLint integration
 
 #### Cursor
+
 - Same extensions as VS Code
 - Enable AI assistance features
 - Configure TypeScript support
@@ -253,6 +263,7 @@ npm install -D @nestjs/cli concurrently nodemon --legacy-peer-deps
 ### PostgreSQL Setup
 
 #### Option 1: Docker (Recommended)
+
 ```bash
 # Navigate to docker directory
 cd infrastructure/docker
@@ -265,6 +276,7 @@ docker ps
 ```
 
 #### Option 2: Local Installation
+
 ```bash
 # Download PostgreSQL 15+
 https://www.postgresql.org/download/
@@ -276,12 +288,14 @@ createdb qoder_resume_dev
 ### Redis Setup
 
 #### Option 1: Docker (Recommended)
+
 ```bash
 # Already included in docker-compose.yml
 docker-compose up -d redis
 ```
 
 #### Option 2: Local Installation
+
 ```bash
 # Windows (using chocolatey)
 choco install redis-64
@@ -296,6 +310,7 @@ sudo apt install redis-server
 ### Database Tools
 
 #### pgAdmin (PostgreSQL GUI)
+
 ```bash
 # Download from
 https://www.pgadmin.org/download/
@@ -305,6 +320,7 @@ docker run -p 80:80 -e PGADMIN_DEFAULT_EMAIL=admin@admin.com -e PGADMIN_DEFAULT_
 ```
 
 #### Redis CLI Tools
+
 ```bash
 # Install redis-cli
 npm install -g redis-cli
@@ -316,6 +332,7 @@ https://resp.app/
 ## 🔧 Optional Tools
 
 ### API Development
+
 ```bash
 # Postman
 https://www.postman.com/downloads/
@@ -328,6 +345,7 @@ pip install httpie
 ```
 
 ### Database Management
+
 ```bash
 # DBeaver (Universal Database Tool)
 https://dbeaver.io/download/
@@ -337,6 +355,7 @@ https://tableplus.com/
 ```
 
 ### Monitoring & Debugging
+
 ```bash
 # Redis Commander
 npm install -g redis-commander
@@ -350,11 +369,13 @@ npm install -g pm2
 ### Environment Variables Setup
 
 1. **Copy environment template**:
+
 ```bash
 cp .env.example .env
 ```
 
 2. **Configure environment variables**:
+
 ```env
 # Database Configuration
 DATABASE_URL="postgresql://username:password@localhost:5432/qoder_resume_dev"
@@ -393,7 +414,7 @@ UPLOAD_PATH=./uploads
 
 # Application Configuration
 NODE_ENV=development
-PORT=3001
+PORT=3002
 FRONTEND_URL=http://localhost:3000
 ```
 
@@ -402,6 +423,7 @@ FRONTEND_URL=http://localhost:3000
 Ensure proper TypeScript configuration is in place:
 
 **Root `tsconfig.json`**:
+
 ```json
 {
   "compilerOptions": {
@@ -433,44 +455,40 @@ Ensure proper TypeScript configuration is in place:
       "@/shared/*": ["./src/shared/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".next"]
 }
 ```
 
 ## ✅ Verification Steps
 
 ### 1. Verify Node.js Environment
+
 ```bash
 node --version
 npm --version
 ```
 
 ### 2. Verify Project Dependencies
+
 ```bash
 npm list --depth=0
 ```
 
 ### 3. Verify TypeScript Compilation
+
 ```bash
 npx tsc --noEmit
 ```
 
 ### 4. Verify Linting
+
 ```bash
 npm run lint
 ```
 
 ### 5. Verify Database Connection
+
 ```bash
 # Start infrastructure
 cd infrastructure/docker
@@ -481,6 +499,7 @@ docker exec -it postgres_container psql -U postgres -d qoder_resume_dev
 ```
 
 ### 6. Verify Build Process
+
 ```bash
 # Frontend build
 npm run build:frontend
@@ -493,6 +512,7 @@ npm run build
 ```
 
 ### 7. Verify Development Server
+
 ```bash
 # Start development servers
 npm run dev
@@ -507,6 +527,7 @@ npm run dev
 ### Common Issues & Solutions
 
 #### 1. Dependency Installation Conflicts
+
 ```bash
 # Solution: Use legacy peer deps
 npm install --legacy-peer-deps
@@ -518,11 +539,13 @@ npm install --legacy-peer-deps
 ```
 
 #### 2. TypeScript Path Resolution Issues
+
 - Check `baseUrl` and `paths` in `tsconfig.json`
 - Ensure VS Code is using workspace TypeScript version
 - Restart TypeScript language server: `Ctrl+Shift+P` → "TypeScript: Restart TS Server"
 
 #### 3. Database Connection Issues
+
 ```bash
 # Check Docker containers
 docker ps
@@ -536,11 +559,13 @@ docker-compose logs postgres
 ```
 
 #### 4. ESLint Configuration Issues
+
 - Ensure `.eslintrc.json` is properly configured
 - Add file exclusions for configuration files
 - Use simplified configuration for NestJS compatibility
 
 #### 5. Framer Motion Type Errors
+
 - Use `{...(props as any)}` for motion components
 - Ensure proper TypeScript configuration
 - Update framer-motion to latest compatible version
@@ -552,6 +577,7 @@ docker-compose logs postgres
    - Enable `typescript.suggest.autoImports: true`
 
 2. **Configure Git ignore patterns**:
+
    ```gitignore
    node_modules/
    .next/
@@ -569,6 +595,7 @@ docker-compose logs postgres
 ## 📚 Additional Resources
 
 ### Documentation Links
+
 - [Next.js Documentation](https://nextjs.org/docs)
 - [NestJS Documentation](https://docs.nestjs.com/)
 - [TypeORM Documentation](https://typeorm.io/)
@@ -576,11 +603,13 @@ docker-compose logs postgres
 - [Framer Motion Documentation](https://www.framer.com/motion/)
 
 ### Community Resources
+
 - [QoderResume GitHub Repository](https://github.com/your-org/qoder-resume)
 - [Project Discord/Slack Channel](#)
 - [Development Guidelines](./CONTRIBUTING.md)
 
 ### Support Contacts
+
 - **Technical Lead**: [contact-email]
 - **DevOps**: [devops-email]
 - **Project Manager**: [pm-email]

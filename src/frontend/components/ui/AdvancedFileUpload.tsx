@@ -72,16 +72,20 @@ export function AdvancedFileUpload({
       });
 
       // Handle accepted files
-      const newFiles: FileWithPreview[] = acceptedFiles.map((file) => ({
-        ...file,
-        id: Math.random().toString(36).substr(2, 9),
-        preview:
-          showPreview && file.type.startsWith("image/")
-            ? URL.createObjectURL(file)
-            : undefined,
-        progress: 0,
-        status: "uploading" as const,
-      }));
+      const newFiles: FileWithPreview[] = acceptedFiles.map((file) => {
+        // Create a proper FileWithPreview object that preserves File properties
+        const fileWithPreview: FileWithPreview = Object.assign(file, {
+          id: Math.random().toString(36).substr(2, 9),
+          preview:
+            showPreview && file.type.startsWith("image/")
+              ? URL.createObjectURL(file)
+              : undefined,
+          progress: 0,
+          status: "uploading" as const,
+        });
+
+        return fileWithPreview;
+      });
 
       setFiles((prev) => {
         const combined = [...prev, ...newFiles];
@@ -229,13 +233,13 @@ export function AdvancedFileUpload({
   const { getRootProps, getInputProps, isDragActive, isDragReject } =
     useDropzone({
       onDrop,
-      accept: acceptedTypes.reduce(
-        (acc, type) => {
-          acc[type] = [];
-          return acc;
-        },
-        {} as Record<string, string[]>
-      ),
+      accept: {
+        "application/pdf": [".pdf"],
+        "application/msword": [".doc"],
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+          [".docx"],
+        "text/plain": [".txt"],
+      },
       maxSize,
       multiple: allowMultiple,
       disabled: isUploading,
@@ -254,19 +258,22 @@ export function AdvancedFileUpload({
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type.includes("pdf")) return FiFileText;
+    const fileType = file.type || "";
+    const fileName = file.name || "";
+
+    if (fileType.includes("pdf")) return FiFileText;
     if (
-      file.type.includes("word") ||
-      file.name.endsWith(".docx") ||
-      file.name.endsWith(".doc")
+      fileType.includes("word") ||
+      fileName.endsWith(".docx") ||
+      fileName.endsWith(".doc")
     )
       return FiFile;
-    if (file.type.includes("text")) return FiFileMinus;
+    if (fileType.includes("text")) return FiFileMinus;
     return FiFile;
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (!bytes || bytes === 0 || isNaN(bytes)) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -319,7 +326,8 @@ export function AdvancedFileUpload({
                   or{" "}
                   <button
                     type="button"
-                    className="text-primary-600 hover:text-primary-500 font-medium"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-primary-600 hover:text-primary-500 font-medium cursor-pointer"
                   >
                     browse files
                   </button>
@@ -368,10 +376,10 @@ export function AdvancedFileUpload({
 
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {file.name}
+                          {file.name || "Unknown file"}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {formatFileSize(file.size)}
+                          {formatFileSize(file.size || 0)}
                         </p>
 
                         {/* Progress Bar */}

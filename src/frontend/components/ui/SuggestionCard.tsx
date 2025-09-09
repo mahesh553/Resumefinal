@@ -8,7 +8,7 @@ import {
   LightBulbIcon,
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SuggestionCardProps {
   suggestion: Suggestion;
@@ -35,13 +35,21 @@ const priorityIconColors = {
 
 export function SuggestionCard({ suggestion, delay = 0 }: SuggestionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const IconComponent = priorityIcons[suggestion.priority];
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
+      initial={false}
+      animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+      transition={{
+        duration: isMounted ? 0.5 : 0,
+        delay: isMounted ? delay : 0,
+      }}
       className={`border rounded-xl overflow-hidden ${priorityColors[suggestion.priority]}`}
     >
       <div
@@ -69,8 +77,10 @@ export function SuggestionCard({ suggestion, delay = 0 }: SuggestionCardProps) {
                   {suggestion.priority}
                 </span>
                 <motion.div
-                  animate={{ rotate: isExpanded ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  animate={
+                    isMounted ? { rotate: isExpanded ? 90 : 0 } : { rotate: 0 }
+                  }
+                  transition={{ duration: isMounted ? 0.2 : 0 }}
                 >
                   <ChevronRightIcon className="w-4 h-4 text-gray-400" />
                 </motion.div>

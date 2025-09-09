@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
 
     // Make request to backend API to verify email
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    const response = await fetch(`${backendUrl}/auth/verify-email`, {
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+    const response = await fetch(`${backendUrl}/api/auth/verify-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

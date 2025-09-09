@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
     // Make request to backend API to get analytics data
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
     const response = await fetch(
       `${backendUrl}/analytics/overview?timeRange=${timeRange}`,
       {

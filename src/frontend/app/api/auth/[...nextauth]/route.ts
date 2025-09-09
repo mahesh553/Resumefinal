@@ -1,9 +1,9 @@
+import { UserRole } from "@/types";
 import type { NextAuthOptions } from "next-auth";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
-import { UserRole } from "@/types";
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -20,7 +20,7 @@ const authOptions: NextAuthOptions = {
 
         try {
           const response = await fetch(
-            `${process.env.BACKEND_URL || "http://localhost:3001"}/api/auth/login`,
+            `${process.env.BACKEND_URL || "http://localhost:3002"}/api/auth/login`,
             {
               method: "POST",
               headers: {
@@ -59,18 +59,28 @@ const authOptions: NextAuthOptions = {
         }
       },
     }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
+    // Only add OAuth providers if credentials are available
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          }),
+        ]
+      : []),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 15 * 60, // 15 minutes
+    maxAge: 24 * 60 * 60, // 24 hours
+    updateAge: 4 * 60 * 60, // Update session every 4 hours instead of constantly
   },
   callbacks: {
     async jwt({ token, user, account }) {
@@ -83,12 +93,13 @@ const authOptions: NextAuthOptions = {
           role: user.role,
           firstName: user.firstName,
           lastName: user.lastName,
-          accessTokenExpires: Date.now() + 15 * 60 * 1000, // 15 minutes
+          accessTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
         };
       }
 
       // Return previous token if the access token has not expired yet
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      // Add 5 minute buffer to prevent edge cases
+      if (Date.now() < (token.accessTokenExpires as number) - 5 * 60 * 1000) {
         return token;
       }
 
@@ -96,13 +107,24 @@ const authOptions: NextAuthOptions = {
       return await refreshAccessToken(token);
     },
     async session({ session, token }) {
+      // If there's a token error, redirect to login by throwing an error
+      if (token.error === "RefreshAccessTokenError") {
+        console.log("Session cleared due to refresh token error");
+        // Instead of returning null, we'll let the client handle the redirect
+        session.error = "RefreshAccessTokenError";
+        return session;
+      }
+
       if (token) {
         session.user.id = token.sub!;
         session.user.role = token.role as UserRole;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
         session.accessToken = token.accessToken as string;
-        session.error = token.error as string;
+        // Only include error if it's not the refresh error (which should clear session)
+        if (token.error && token.error !== "RefreshAccessTokenError") {
+          session.error = token.error as string;
+        }
       }
       return session;
     },
@@ -116,8 +138,12 @@ const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
+    // Add timeout and better error handling for refresh requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(
-      `${process.env.BACKEND_URL || "http://localhost:3001"}/api/auth/refresh`,
+      `${process.env.BACKEND_URL || "http://localhost:3002"}/api/auth/refresh`,
       {
         method: "POST",
         headers: {
@@ -126,26 +152,52 @@ async function refreshAccessToken(token: any) {
         body: JSON.stringify({
           refreshToken: token.refreshToken,
         }),
+        signal: controller.signal,
       }
     );
 
+    clearTimeout(timeoutId);
     const refreshedTokens = await response.json();
 
     if (!response.ok) {
-      throw refreshedTokens;
+      // Only throw on actual auth errors, not network issues
+      if (response.status === 401 || response.status === 403) {
+        throw refreshedTokens;
+      }
+      // For network errors, return the existing token to prevent logout
+      console.warn(
+        "Token refresh failed due to network issue, keeping existing token"
+      );
+      return token;
     }
 
     return {
       ...token,
       accessToken: refreshedTokens.accessToken,
-      accessTokenExpires: Date.now() + 15 * 60 * 1000, // 15 minutes
+      accessTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
       refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
+      error: undefined, // Clear any previous errors
     };
   } catch (error) {
     console.error("Error refreshing access token:", error);
+
+    // For network timeouts or connection issues, keep the existing token
+    if (
+      error instanceof Error &&
+      (error.name === "AbortError" || error.message?.includes("fetch"))
+    ) {
+      console.warn(
+        "Network error during token refresh, keeping existing session"
+      );
+      return token;
+    }
+
+    // Only clear session for actual authentication errors
     return {
       ...token,
       error: "RefreshAccessTokenError",
+      accessToken: undefined, // Clear invalid token
+      refreshToken: undefined, // Clear invalid refresh token
     };
   }
 }

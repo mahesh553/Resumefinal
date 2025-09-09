@@ -6,6 +6,7 @@ import { MonitoringModule } from "./common/monitoring.module";
 import * as entities from "./database/entities";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AIModule } from "./modules/ai/ai.module";
+import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { HealthModule } from "./modules/health/health.module";
 import { JdMatchingModule } from "./modules/jd-matching/jd-matching.module";
@@ -27,15 +28,28 @@ import { QueueProcessorModule } from "./queues/queue-processor.module";
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>("DATABASE_URL");
+        const isSupabase = databaseUrl?.includes("supabase.co");
+        const dbSynchronize = configService.get<string>("DB_SYNCHRONIZE");
+
+        // Determine synchronization strategy
+        let shouldSynchronize = false;
+        if (dbSynchronize !== undefined) {
+          // Explicit control via DB_SYNCHRONIZE environment variable
+          shouldSynchronize = dbSynchronize === "true";
+        } else {
+          // Default behavior: only sync in development and not with Supabase
+          shouldSynchronize =
+            configService.get("NODE_ENV") === "development" && !isSupabase;
+        }
 
         // Base configuration
         const config = {
           type: "postgres" as const,
           entities: Object.values(entities),
-          synchronize: configService.get("NODE_ENV") === "development",
+          synchronize: shouldSynchronize,
           logging: configService.get("NODE_ENV") === "development",
           ssl:
-            configService.get("NODE_ENV") === "production"
+            isSupabase || configService.get("NODE_ENV") === "production"
               ? { rejectUnauthorized: false }
               : false,
         };
@@ -80,19 +94,40 @@ import { QueueProcessorModule } from "./queues/queue-processor.module";
     // Redis/BullMQ configuration
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get("REDIS_HOST"),
-          port: configService.get("REDIS_PORT"),
-          password: configService.get("REDIS_PASSWORD"),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get("REDIS_HOST");
+        const port = configService.get("REDIS_PORT");
+        const password = configService.get("REDIS_PASSWORD");
+        const isCloudRedis = host && !host.includes("localhost");
+
+        const config: any = {
+          host,
+          port,
+          password,
+          retryDelayOnFailover: 100,
+          enableReadyCheck: false,
+          maxRetriesPerRequest: null,
+          lazyConnect: true,
+        };
+
+        // Enable TLS for cloud Redis services if needed
+        if (isCloudRedis && configService.get("REDIS_TLS_ENABLED") === "true") {
+          config.tls = {
+            rejectUnauthorized: false,
+          };
+        }
+
+        return {
+          redis: config,
+        };
+      },
       inject: [ConfigService],
     }),
 
     // Application modules
     AuthModule,
     AIModule,
+    AnalyticsModule,
     ResumeAnalysisModule,
     JobTrackerModule,
     JdMatchingModule,

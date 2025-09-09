@@ -13,7 +13,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
 import { FilePreviewModal } from "./FilePreviewModal";
@@ -24,6 +24,7 @@ export function ResumeUploadSection() {
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -285,7 +286,7 @@ export function ResumeUploadSection() {
         }`}
       >
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <input {...getInputProps()} />
+          <input {...getInputProps()} ref={fileInputRef} />
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -477,11 +478,7 @@ export function ResumeUploadSection() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Button
           variant="secondary"
-          onClick={() =>
-            (
-              document.querySelector('input[type="file"]') as HTMLInputElement
-            )?.click()
-          }
+          onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
         >
           <DocumentTextIcon className="w-4 h-4 mr-2" />

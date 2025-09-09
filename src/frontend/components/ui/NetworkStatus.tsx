@@ -55,10 +55,13 @@ export function NetworkProvider({
   const testConnectionSpeed = useCallback(async (): Promise<number> => {
     try {
       const startTime = performance.now();
-      const response = await fetch("/api/health", {
-        method: "HEAD",
-        cache: "no-cache",
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002/api"}/health`,
+        {
+          method: "HEAD",
+          cache: "no-cache",
+        }
+      );
       const endTime = performance.now();
 
       if (response.ok) {

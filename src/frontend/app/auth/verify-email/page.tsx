@@ -21,8 +21,13 @@ export default function VerifyEmailPage() {
     useState<VerificationState>("loading");
   const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const verifyEmail = useCallback(
     async (token: string) => {
@@ -150,17 +155,20 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={false}
+        animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+        transition={{ duration: isMounted ? 0.6 : 0 }}
         className="w-full max-w-md"
       >
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { scale: 1 } : { scale: 1 }}
+            transition={{
+              delay: isMounted ? 0.2 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="mb-4"
           >
             <h1 className="text-3xl font-bold gradient-text">
@@ -174,16 +182,25 @@ export default function VerifyEmailPage() {
 
         {/* Main Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          initial={false}
+          animate={
+            isMounted ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }
+          }
+          transition={{
+            delay: isMounted ? 0.3 : 0,
+            duration: isMounted ? 0.5 : 0,
+          }}
           className="glass-effect rounded-2xl p-8 shadow-xl"
         >
           {/* Status Icon */}
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.5, type: "spring" }}
+            initial={false}
+            animate={isMounted ? { scale: 1 } : { scale: 1 }}
+            transition={{
+              delay: isMounted ? 0.4 : 0,
+              duration: isMounted ? 0.5 : 0,
+              type: isMounted ? "spring" : "tween",
+            }}
             className="text-center mb-6"
           >
             <div
@@ -195,9 +212,12 @@ export default function VerifyEmailPage() {
 
           {/* Status Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+            transition={{
+              delay: isMounted ? 0.5 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="text-center mb-8"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
@@ -215,9 +235,12 @@ export default function VerifyEmailPage() {
 
           {/* Action Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+            transition={{
+              delay: isMounted ? 0.6 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="space-y-4"
           >
             {verificationState === "success" && (
@@ -267,9 +290,12 @@ export default function VerifyEmailPage() {
 
           {/* Help Text */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { opacity: 1 } : { opacity: 1 }}
+            transition={{
+              delay: isMounted ? 0.7 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="mt-8 pt-6 border-t border-gray-200 text-center"
           >
             <p className="text-sm text-gray-500">
@@ -286,9 +312,12 @@ export default function VerifyEmailPage() {
 
         {/* Footer */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
+          initial={false}
+          animate={isMounted ? { opacity: 1 } : { opacity: 1 }}
+          transition={{
+            delay: isMounted ? 0.8 : 0,
+            duration: isMounted ? 0.4 : 0,
+          }}
           className="mt-8 text-center"
         >
           <Link

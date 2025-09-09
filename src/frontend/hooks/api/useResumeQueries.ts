@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 
 // Query Keys
@@ -77,6 +78,8 @@ export function useResumeVersions(resumeId: string) {
 
 // User Stats Query
 export function useUserStats() {
+  const { data: session, status } = useSession();
+
   return useQuery({
     queryKey: resumeKeys.userStats(),
     queryFn: async () => {
@@ -88,7 +91,18 @@ export function useUserStats() {
       }
       return result.data;
     },
+    enabled: status === "authenticated" && !!session?.accessToken,
     staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry authentication errors
+      if (
+        error.message.includes("Unauthorized") ||
+        error.message.includes("authentication")
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 }
 

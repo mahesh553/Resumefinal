@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 
     // Make request to backend API to resend verification email
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    const response = await fetch(`${backendUrl}/auth/resend-verification`, {
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+    const response = await fetch(`${backendUrl}/api/auth/resend-verification`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

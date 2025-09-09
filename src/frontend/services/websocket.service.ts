@@ -1,5 +1,5 @@
-import { io, Socket } from 'socket.io-client';
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
+import { io, Socket } from "socket.io-client";
 
 export interface WebSocketEvent {
   event: string;
@@ -9,14 +9,18 @@ export interface WebSocketEvent {
 
 export interface NotificationData {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   title: string;
   message: string;
   duration?: number;
   timestamp: string;
 }
 
-export type WebSocketConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
+export type WebSocketConnectionStatus =
+  | "connected"
+  | "connecting"
+  | "disconnected"
+  | "error";
 
 export interface ResumeAnalysisProgress {
   analysisId: string;
@@ -28,21 +32,21 @@ export interface ResumeAnalysisProgress {
 export interface ResumeAnalysisComplete {
   analysisId: string;
   result: any;
-  status: 'completed';
+  status: "completed";
   timestamp: string;
 }
 
 export interface ResumeAnalysisError {
   analysisId: string;
   error: string;
-  status: 'error';
+  status: "error";
   timestamp: string;
 }
 
 export interface JobUpdateData {
   job?: any;
   jobId?: string;
-  action: 'created' | 'updated' | 'deleted' | 'status_changed';
+  action: "created" | "updated" | "deleted" | "status_changed";
   oldStatus?: string;
   newStatus?: string;
   timestamp: string;
@@ -58,7 +62,7 @@ export interface JDMatchingProgress {
 export interface JDMatchingComplete {
   matchingId: string;
   result: any;
-  status: 'completed';
+  status: "completed";
   timestamp: string;
 }
 
@@ -68,9 +72,11 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private connectionStatus: WebSocketConnectionStatus = 'disconnected';
+  private connectionStatus: WebSocketConnectionStatus = "disconnected";
   private eventListeners = new Map<string, Set<(data: any) => void>>();
-  private statusListeners = new Set<(status: WebSocketConnectionStatus) => void>();
+  private statusListeners = new Set<
+    (status: WebSocketConnectionStatus) => void
+  >();
 
   // Singleton pattern
   private static instance: WebSocketService | null = null;
@@ -97,13 +103,13 @@ class WebSocketService {
     this.token = token;
     this.disconnect(); // Disconnect existing connection
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
-    
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3002";
+
     this.socket = io(wsUrl, {
       auth: {
         token,
       },
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
@@ -123,7 +129,7 @@ class WebSocketService {
     }
     this.token = null;
     this.reconnectAttempts = 0;
-    this.updateConnectionStatus('disconnected');
+    this.updateConnectionStatus("disconnected");
   }
 
   /**
@@ -147,13 +153,13 @@ class WebSocketService {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    
+
     this.eventListeners.get(event)!.add(callback);
 
     // Set up socket listener if not already set
     if (this.socket && this.eventListeners.get(event)!.size === 1) {
       this.socket.on(event, (data: T) => {
-        this.eventListeners.get(event)?.forEach(listener => listener(data));
+        this.eventListeners.get(event)?.forEach((listener) => listener(data));
       });
     }
 
@@ -169,9 +175,11 @@ class WebSocketService {
   /**
    * Subscribe to connection status changes
    */
-  public onConnectionStatusChange(callback: (status: WebSocketConnectionStatus) => void): () => void {
+  public onConnectionStatusChange(
+    callback: (status: WebSocketConnectionStatus) => void
+  ): () => void {
     this.statusListeners.add(callback);
-    
+
     // Immediately call with current status
     callback(this.connectionStatus);
 
@@ -187,7 +195,7 @@ class WebSocketService {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
-      console.warn('WebSocket not connected. Event not sent:', event);
+      console.warn("WebSocket not connected. Event not sent:", event);
     }
   }
 
@@ -195,82 +203,87 @@ class WebSocketService {
    * Join a room
    */
   public joinRoom(room: string): void {
-    this.emit('join_room', { room });
+    this.emit("join_room", { room });
   }
 
   /**
    * Leave a room
    */
   public leaveRoom(room: string): void {
-    this.emit('leave_room', { room });
+    this.emit("leave_room", { room });
   }
 
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
     // Connection events
-    this.socket.on('connect', () => {
-      this.updateConnectionStatus('connected');
+    this.socket.on("connect", () => {
+      this.updateConnectionStatus("connected");
       this.reconnectAttempts = 0;
-      
+
       // Authenticate after connection
       if (this.token) {
-        this.socket?.emit('authenticate', { token: this.token });
+        this.socket?.emit("authenticate", { token: this.token });
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
-      this.updateConnectionStatus('disconnected');
-      console.log('WebSocket disconnected:', reason);
+    this.socket.on("disconnect", (reason) => {
+      this.updateConnectionStatus("disconnected");
+      console.log("WebSocket disconnected:", reason);
     });
 
-    this.socket.on('connect_error', (error) => {
-      this.updateConnectionStatus('error');
-      console.error('WebSocket connection error:', error);
+    this.socket.on("connect_error", (error) => {
+      this.updateConnectionStatus("error");
+      console.error("WebSocket connection error:", error);
       this.handleReconnection();
     });
 
     // Authentication events
-    this.socket.on('authenticated', (data) => {
-      console.log('WebSocket authenticated:', data);
-      toast.success('Connected to real-time updates');
+    this.socket.on("authenticated", (data) => {
+      console.log("WebSocket authenticated:", data);
+      toast.success("Connected to real-time updates");
     });
 
-    this.socket.on('authentication_error', (error) => {
-      console.error('WebSocket authentication error:', error);
-      toast.error('Failed to authenticate WebSocket connection');
-      this.updateConnectionStatus('error');
+    this.socket.on("authentication_error", (error) => {
+      console.error("WebSocket authentication error:", error);
+      toast.error("Failed to authenticate WebSocket connection");
+      this.updateConnectionStatus("error");
     });
 
     // Set up listeners for existing event subscriptions
     this.eventListeners.forEach((listeners, event) => {
       this.socket?.on(event, (data) => {
-        listeners.forEach(listener => listener(data));
+        listeners.forEach((listener) => listener(data));
       });
     });
   }
 
   private handleReconnection(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
-      toast.error('Connection lost. Please refresh the page.');
+      console.error("Max reconnection attempts reached");
+      toast.error("Connection lost. Please refresh the page.");
       return;
     }
 
     this.reconnectAttempts++;
-    this.updateConnectionStatus('connecting');
-    
-    setTimeout(() => {
-      if (this.token && !this.socket?.connected) {
-        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-        this.connect(this.token);
-      }
-    }, this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)); // Exponential backoff
+    this.updateConnectionStatus("connecting");
+
+    setTimeout(
+      () => {
+        if (this.token && !this.socket?.connected) {
+          console.log(
+            `Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+          );
+          this.connect(this.token);
+        }
+      },
+      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)
+    ); // Exponential backoff
   }
 
   private updateConnectionStatus(status: WebSocketConnectionStatus): void {
     this.connectionStatus = status;
-    this.statusListeners.forEach(listener => listener(status));
+    this.statusListeners.forEach((listener) => listener(status));
   }
 }
 

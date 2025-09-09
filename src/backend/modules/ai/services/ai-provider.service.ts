@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { RedisService } from '../../../config/redis.service';
 import { GeminiProvider } from '../providers/gemini.provider';
 import { OpenAIProvider } from '../providers/openai.provider';
 import { ClaudeProvider } from '../providers/claude.provider';
@@ -20,7 +20,7 @@ export class AIProviderService {
 
   constructor(
     private configService: ConfigService,
-    private redis: Redis,
+    private redis: RedisService,
     private geminiProvider: GeminiProvider,
     private openaiProvider: OpenAIProvider,
     private claudeProvider: ClaudeProvider,

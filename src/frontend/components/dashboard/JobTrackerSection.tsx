@@ -189,7 +189,7 @@ export function JobTrackerSection() {
       unsubscribeJobUpdate();
       unsubscribeJobStatus();
     };
-  }, [isConnected, on, refetchJobs, refetchStats]);
+  }, [isConnected, on]); // Removed refetchJobs and refetchStats from dependencies
 
   // Update pagination when job data changes
   useEffect(() => {

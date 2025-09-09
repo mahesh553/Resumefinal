@@ -28,6 +28,7 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
     score: 0,
     label: "",
@@ -37,6 +38,10 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -172,8 +177,8 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={false}
+          animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
           className="glass-effect rounded-2xl p-8 text-center max-w-md"
         >
           <div className="w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
@@ -199,17 +204,20 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={false}
+        animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+        transition={{ duration: isMounted ? 0.6 : 0 }}
         className="w-full max-w-md"
       >
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { scale: 1 } : { scale: 1 }}
+            transition={{
+              delay: isMounted ? 0.2 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="mb-4"
           >
             <h1 className="text-3xl font-bold gradient-text">
@@ -223,18 +231,26 @@ export default function ResetPasswordPage() {
 
         {/* Main Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          initial={false}
+          animate={
+            isMounted ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }
+          }
+          transition={{
+            delay: isMounted ? 0.3 : 0,
+            duration: isMounted ? 0.5 : 0,
+          }}
           className="glass-effect rounded-2xl p-8 shadow-xl"
         >
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Password Field */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.4 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <label
                 htmlFor="password"
@@ -308,9 +324,12 @@ export default function ResetPasswordPage() {
 
             {/* Confirm Password Field */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.5 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <label
                 htmlFor="confirmPassword"
@@ -346,9 +365,12 @@ export default function ResetPasswordPage() {
 
             {/* Submit Button */}
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.6 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <Button
                 type="submit"
@@ -367,9 +389,12 @@ export default function ResetPasswordPage() {
 
           {/* Login Link */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.4 }}
+            initial={false}
+            animate={isMounted ? { opacity: 1 } : { opacity: 1 }}
+            transition={{
+              delay: isMounted ? 0.7 : 0,
+              duration: isMounted ? 0.4 : 0,
+            }}
             className="mt-6 text-center"
           >
             <p className="text-sm text-gray-500">

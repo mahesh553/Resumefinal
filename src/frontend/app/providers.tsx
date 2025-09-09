@@ -6,9 +6,9 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "next-auth/react";
-import React from "react";
+import React, { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { WebSocketProvider } from "../components/providers/WebSocketProvider";
 import { NetworkProvider } from "../components/ui/NetworkStatus";
@@ -87,11 +87,15 @@ const queryClient = new QueryClient({
       if (error instanceof Error) {
         const errorMessage = error.message.toLowerCase();
 
-        if (errorMessage.includes("unauthorized")) {
-          toast.error("Session expired. Please log in again.", {
-            id: "auth-error",
-            duration: 5000,
-          });
+        if (
+          errorMessage.includes("unauthorized") ||
+          errorMessage.includes("session expired") ||
+          errorMessage.includes("authentication required")
+        ) {
+          // Don't show toast immediately, the auth redirect will handle it
+          console.log(
+            "Authentication error detected, user will be redirected to login"
+          );
         } else if (
           errorMessage.includes("network") ||
           errorMessage.includes("fetch")
@@ -147,11 +151,40 @@ const queryClient = new QueryClient({
   }),
 });
 
+// Visibility change handler to pause queries when tab is hidden
+function setupVisibilityHandler(queryClient: QueryClient) {
+  if (typeof window === "undefined") return;
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      // Pause queries when tab is hidden
+      queryClient
+        .getQueryCache()
+        .getAll()
+        .forEach((query) => {
+          queryClient.cancelQueries({ queryKey: query.queryKey });
+        });
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  return () => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  };
+}
+
 interface ProvidersProps {
   children: React.ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
+  // Setup visibility handler on mount
+  useEffect(() => {
+    const cleanup = setupVisibilityHandler(queryClient);
+    return cleanup;
+  }, []);
+
   return (
     <ErrorReportingProvider
       config={{
@@ -161,15 +194,19 @@ export function Providers({ children }: ProvidersProps) {
     >
       <NetworkProvider showNotifications={true} monitorSlowConnection={true}>
         <QueryClientProvider client={queryClient}>
-          <SessionProvider>
+          <SessionProvider
+            refetchInterval={0}
+            refetchOnWindowFocus={false}
+            refetchWhenOffline={false}
+          >
             <WebSocketProvider autoConnect={true} showNotifications={true}>
               {children}
             </WebSocketProvider>
           </SessionProvider>
-          {/* Only show React Query Devtools in development */}
-          {process.env.NODE_ENV === "development" && (
+          {/* React Query Devtools temporarily disabled */}
+          {/* {process.env.NODE_ENV === "development" && (
             <ReactQueryDevtools initialIsOpen={false} />
-          )}
+          )} */}
         </QueryClientProvider>
       </NetworkProvider>
     </ErrorReportingProvider>

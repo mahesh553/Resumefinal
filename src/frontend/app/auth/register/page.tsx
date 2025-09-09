@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaGithub, FaGoogle, FaLinkedin } from "react-icons/fa";
 import {
@@ -37,12 +37,17 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
     score: 0,
     label: "",
     color: "",
   });
   const { register } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const calculatePasswordStrength = (password: string): PasswordStrength => {
     let score = 0;
@@ -127,21 +132,30 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={false}
+          animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+          transition={{ duration: isMounted ? 0.6 : 0 }}
           className="w-full max-w-md"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            initial={false}
+            animate={
+              isMounted ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }
+            }
+            transition={{
+              delay: isMounted ? 0.3 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="glass-effect rounded-2xl p-8 shadow-xl text-center"
           >
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4, duration: 0.5, type: "spring" }}
+              initial={false}
+              animate={isMounted ? { scale: 1 } : { scale: 1 }}
+              transition={{
+                delay: isMounted ? 0.4 : 0,
+                duration: isMounted ? 0.5 : 0,
+                type: isMounted ? "spring" : "tween",
+              }}
               className="mb-6"
             >
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
@@ -202,17 +216,20 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={false}
+        animate={isMounted ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+        transition={{ duration: isMounted ? 0.6 : 0 }}
         className="w-full max-w-lg"
       >
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            initial={false}
+            animate={isMounted ? { scale: 1 } : { scale: 1 }}
+            transition={{
+              delay: isMounted ? 0.2 : 0,
+              duration: isMounted ? 0.5 : 0,
+            }}
             className="mb-4"
           >
             <h1 className="text-3xl font-bold gradient-text">
@@ -226,9 +243,14 @@ export default function RegisterPage() {
 
         {/* Main Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          initial={false}
+          animate={
+            isMounted ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }
+          }
+          transition={{
+            delay: isMounted ? 0.3 : 0,
+            duration: isMounted ? 0.5 : 0,
+          }}
           className="glass-effect rounded-2xl p-8 shadow-xl"
         >
           {/* Social Signup Buttons */}
@@ -279,9 +301,14 @@ export default function RegisterPage() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
+                initial={false}
+                animate={
+                  isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }
+                }
+                transition={{
+                  delay: isMounted ? 0.4 : 0,
+                  duration: isMounted ? 0.4 : 0,
+                }}
               >
                 <label
                   htmlFor="firstName"
@@ -305,9 +332,14 @@ export default function RegisterPage() {
               </motion.div>
 
               <motion.div
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
+                initial={false}
+                animate={
+                  isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }
+                }
+                transition={{
+                  delay: isMounted ? 0.4 : 0,
+                  duration: isMounted ? 0.4 : 0,
+                }}
               >
                 <label
                   htmlFor="lastName"
@@ -333,9 +365,12 @@ export default function RegisterPage() {
 
             {/* Email Field */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.5 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <label
                 htmlFor="email"
@@ -360,9 +395,12 @@ export default function RegisterPage() {
 
             {/* Password Field */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.6 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <label
                 htmlFor="password"
@@ -437,9 +475,12 @@ export default function RegisterPage() {
 
             {/* Confirm Password Field */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.7 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <label
                 htmlFor="confirmPassword"
@@ -477,9 +518,12 @@ export default function RegisterPage() {
 
             {/* Terms Agreement */}
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { x: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.8 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
               className="flex items-start"
             >
               <input
@@ -509,9 +553,12 @@ export default function RegisterPage() {
 
             {/* Submit Button */}
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.9, duration: 0.4 }}
+              initial={false}
+              animate={isMounted ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
+              transition={{
+                delay: isMounted ? 0.9 : 0,
+                duration: isMounted ? 0.4 : 0,
+              }}
             >
               <Button
                 type="submit"
@@ -528,9 +575,12 @@ export default function RegisterPage() {
 
           {/* Login Link */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.4 }}
+            initial={false}
+            animate={isMounted ? { opacity: 1 } : { opacity: 1 }}
+            transition={{
+              delay: isMounted ? 1 : 0,
+              duration: isMounted ? 0.4 : 0,
+            }}
             className="mt-6 text-center"
           >
             <p className="text-gray-600">

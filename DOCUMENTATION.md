@@ -323,8 +323,8 @@ SMTP_PASS="..."
 When running in development mode:
 
 - **Frontend Application**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **API Documentation**: http://localhost:3001/api/docs (Swagger UI)
+- **Backend API**: http://localhost:3002
+- **API Documentation**: http://localhost:3002/api/docs (Swagger UI)
 - **PostgreSQL Database**: localhost:5432 (via Docker or Supabase)
 - **Redis Cache**: localhost:6379 (via Docker)
 
