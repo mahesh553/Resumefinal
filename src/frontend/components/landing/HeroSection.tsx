@@ -3,8 +3,11 @@
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Button } from "@/components/ui/Button";
 import { ChevronRightIcon, SparklesIcon } from "@heroicons/react/24/outline";
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+=======
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
 
 export function HeroSection() {
   const [isMounted, setIsMounted] = useState(false);
@@ -20,7 +23,12 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-grid-slate-100/50 bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
       </div>
 
+      {/* Floating Elements */}
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
       {/* Floating Elements - Always render but conditionally animate */}
+=======
+      {/* Floating Elements */}
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(6)].map((_, i) => {
           // Use deterministic positions to avoid hydration mismatches
@@ -37,6 +45,17 @@ export function HeroSection() {
             <motion.div
               key={i}
               className="absolute w-64 h-64 bg-gradient-to-br from-primary-200/20 to-blue-200/20 rounded-full blur-3xl"
+              animate={{
+                x: [0, 100, 0],
+                y: [0, -100, 0],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 20 + i * 5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
               animate={
                 isMounted
                   ? {
@@ -55,6 +74,18 @@ export function HeroSection() {
                     }
                   : { duration: 0 }
               }
+=======
+              animate={{
+                x: [0, 100, 0],
+                y: [0, -100, 0],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 20 + i * 5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+>>>>>>> a169ee0935b3ca30a1b9c2fb30c978ac3dc062f0
               style={{
                 left: positions[i]?.left || "50%",
                 top: positions[i]?.top || "50%",
